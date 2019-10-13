@@ -205,18 +205,18 @@ public void onBeaconDiscovered(KBeacon[] beacons)
 }
 ```
 
-5. Clean scanning result and stop scanning
+5. Clean scanning result and stop scanning  
 After start scanning, The KBeaconMgr will buffer all found KBeacon device. If the app want to remove all buffered KBeacon device, the app can:  
 ```Java
 mBeaconsMgr.clearBeacons();
 ```
-If the app want stop scanning:
+If the app want to stop scanning:
 ```Java
 mBeaconsMgr. stopScanning();
 ```
 
 ### 4.2 Connect to device
- 1. If the app want to change the device configruation, then it need connect to the device.
+ 1. If the app want to change the device paramaters, then it need connect to the device.
  ```Java
 mBeacon.connect(password, max_timeout,  connectionDelegate);
  ```
@@ -269,16 +269,16 @@ mBeacon.disconnect();
 
 ### 4.3 Configure parameters
 #### 4.3.1 Advertisment type
-KBeacon devices support sending multiple beacon advertisment packet in parallel.
-Example, Advertisment period was set to 500ms. Advertisment type was set to “iBeacon + URL + UID + KSensor”, then the advertisment packet is like follow.   
+KBeacon devices support sending multiple beacon advertisment packet in parallel.  
+For example, advertisment period was set to 500ms. Advertisment type was set to “iBeacon + URL + UID + KSensor”, then the device will send advertisment packet like follow.   
 
 |Time(ms)|0|500|1000|1500|2000|2500|3000|3500
 |----|----|----|----|----|----|----|----|----
 |`Adv type`|KSensor|UID|iBeacon|URL|KSensor|UID|iBeacon|URL
 
 
-If the advertisment type include TLM, the TLM advertisment interval is fixed to 10. It means the TLM will advertisement every 10 packet.  
-Example: Advertisment period was set to 500ms. Advertisment type was set to “URL + TLM”, then the advertisment packet is like follow
+If the advertisment type include TLM, the TLM advertisment interval is fixed to 10. It means the TLM will advertisement every 10 other advertisement packet.  
+For example: advertisment period was set to 500ms. Advertisment type was set to “URL + TLM”, then the advertisment packet is like follow
 
 |Time|0|500|1000|1500|2000|2500|3000|3500|4000|4500|5000
 |----|----|----|----|----|----|----|----|----|----|----|----
@@ -423,8 +423,8 @@ public void simpleUpdateDeviceTest() {
 
 ```
 
-Sometimes the app need to configure multiple advertisment type parameters at the same time. We recommend that the app check whether the parameters change before upload. If the paramaters valis is no change, the app do not need to send the configuration.  
-Example2: check if the paramaters was change and update paramaters
+Sometimes the app need to configure multiple advertisment type parameters at the same time. We recommend that the app should check whether the parameters was changed before update. If the paramaters value is no change, the app do not need to send the configuration.  
+Example2: check if the paramaters was changed, then send new paramaters to device
 ```Java
 //read user input and download to KBeacon device
 void updateViewToDevice()
