@@ -209,10 +209,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
             cfgList.add(newCommomCfg);
             cfgList.add(newBeaconCfg);
-            KBCfgBase[] cfgPara = new KBCfgBase[cfgList.size()];
-            cfgList.toArray(cfgPara);
             mDownloadButton.setEnabled(false);
-            mBeacon.modifyConfig(cfgPara, new KBeacon.ActionCallback() {
+            mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
                 @Override
                 public void onActionComplete(boolean bConfigSuccess, KBException error) {
                     mDownloadButton.setEnabled(true);

@@ -46,7 +46,7 @@ import java.util.HashMap;
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
 public class MainActivity extends AppBaseActivity implements AdapterView.OnItemClickListener,
-        KBeaconsMgr.KBeaconMgrDelegate, LeDeviceListAdapter.ListDataSource{
+       LeDeviceListAdapter.ListDataSource{
 	private final static String LOG_TAG = "BeaconScanning";//DeviceScanActivity.class.getSimpleName();
 
     private ListView mListView;
@@ -97,7 +97,7 @@ public class MainActivity extends AppBaseActivity implements AdapterView.OnItemC
             toastShow("Make sure the phone supports BLE funtion");
             return;
         }
-        mBeaconsMgr.delegate = this;
+        mBeaconsMgr.delegate = beaconMgrDeletate;
 
         //set scanning mode
         mBeaconsMgr.setScanMode(KBeaconsMgr.SCAN_MODE_LOW_LATENCY);
@@ -149,71 +149,74 @@ public class MainActivity extends AppBaseActivity implements AdapterView.OnItemC
         mBeaconsMgr.clearBeacons();
     }
 
-    //get advertisement packet during scanning callback
-    public void onBeaconDiscovered(KBeacon[] beacons)
+    KBeaconsMgr.KBeaconMgrDelegate beaconMgrDeletate = new KBeaconsMgr.KBeaconMgrDelegate()
     {
-        for (KBeacon beacon: beacons)
+        //get advertisement packet during scanning callback
+        public void onBeaconDiscovered(KBeacon[] beacons)
         {
-            //get beacon adv common info
-            Log.v(LOG_TAG, "beacon mac:" + beacon.getMac());
-            Log.v(LOG_TAG, "beacon name:" + beacon.getName());
-            Log.v(LOG_TAG,"beacon rssi:" + beacon.getRssi());
-
-            //get adv packet
-            for (KBAdvPacketBase advPacket : beacon.allAdvPackets())
+            for (KBeacon beacon: beacons)
             {
-                switch (advPacket.getAdvType())
-                {
-                    case KBAdvType.KBAdvTypeIBeacon:
-                    {
-                        KBAdvPacketIBeacon advIBeacon = (KBAdvPacketIBeacon)advPacket;
-                        Log.v(LOG_TAG,"iBeacon uuid:" + advIBeacon.getUuid());
-                        Log.v(LOG_TAG,"iBeacon major:" + advIBeacon.getMajorID());
-                        Log.v(LOG_TAG,"iBeacon minor:" + advIBeacon.getMinorID());
-                        break;
-                    }
+                //get beacon adv common info
+                Log.v(LOG_TAG, "beacon mac:" + beacon.getMac());
+                Log.v(LOG_TAG, "beacon name:" + beacon.getName());
+                Log.v(LOG_TAG,"beacon rssi:" + beacon.getRssi());
 
-                    case KBAdvType.KBAdvTypeEddyTLM:
+                //get adv packet
+                for (KBAdvPacketBase advPacket : beacon.allAdvPackets())
+                {
+                    switch (advPacket.getAdvType())
                     {
-                        KBAdvPacketEddyTLM advTLM = (KBAdvPacketEddyTLM)advPacket;
-                        Log.v(LOG_TAG,"TLM battery:" + advTLM.getBatteryLevel());
-                        Log.v(LOG_TAG,"TLM Temperature:" + advTLM.getTemperature());
-                        Log.v(LOG_TAG,"TLM adv count:" + advTLM.getAdvCount());
-                        break;
+                        case KBAdvType.KBAdvTypeIBeacon:
+                        {
+                            KBAdvPacketIBeacon advIBeacon = (KBAdvPacketIBeacon)advPacket;
+                            Log.v(LOG_TAG,"iBeacon uuid:" + advIBeacon.getUuid());
+                            Log.v(LOG_TAG,"iBeacon major:" + advIBeacon.getMajorID());
+                            Log.v(LOG_TAG,"iBeacon minor:" + advIBeacon.getMinorID());
+                            break;
+                        }
+
+                        case KBAdvType.KBAdvTypeEddyTLM:
+                        {
+                            KBAdvPacketEddyTLM advTLM = (KBAdvPacketEddyTLM)advPacket;
+                            Log.v(LOG_TAG,"TLM battery:" + advTLM.getBatteryLevel());
+                            Log.v(LOG_TAG,"TLM Temperature:" + advTLM.getTemperature());
+                            Log.v(LOG_TAG,"TLM adv count:" + advTLM.getAdvCount());
+                            break;
+                        }
                     }
                 }
+
+                mBeaconsDictory.put(beacon.getMac(), beacon);
             }
 
-            mBeaconsDictory.put(beacon.getMac(), beacon);
+            if (mBeaconsDictory.size() > 0) {
+                mBeaconsArray = new KBeacon[mBeaconsDictory.size()];
+                mBeaconsDictory.values().toArray(mBeaconsArray);
+                mDevListAdapter.notifyDataSetChanged();
+            }
         }
 
-        if (mBeaconsDictory.size() > 0) {
-            mBeaconsArray = new KBeacon[mBeaconsDictory.size()];
-            mBeaconsDictory.values().toArray(mBeaconsArray);
-            mDevListAdapter.notifyDataSetChanged();
-        }
-    }
-
-    public void onCentralBleStateChang(int nNewState)
-    {
-        if (nNewState == KBeaconsMgr.BLEStatePowerOff)
+        public void onCentralBleStateChang(int nNewState)
         {
-            Log.e(LOG_TAG, "BLE function is power off");
+            if (nNewState == KBeaconsMgr.BLEStatePowerOff)
+            {
+                Log.e(LOG_TAG, "BLE function is power off");
+            }
+            else if (nNewState == KBeaconsMgr.BLEStatePowerOn)
+            {
+                Log.e(LOG_TAG, "BLE function is power on");
+            }
         }
-        else if (nNewState == KBeaconsMgr.BLEStatePowerOn)
-        {
-            Log.e(LOG_TAG, "BLE function is power on");
-        }
-    }
 
-    public void onScanFailed(int errorCode)
-    {
-        Log.e(LOG_TAG, "Start N scan failed：" + errorCode);
-        if (mScanFailedContinueNum >= MAX_ERROR_SCAN_NUMBER){
-            toastShow("scan encount error, error time:" + mScanFailedContinueNum);
+        public void onScanFailed(int errorCode)
+        {
+            Log.e(LOG_TAG, "Start N scan failed：" + errorCode);
+            if (mScanFailedContinueNum >= MAX_ERROR_SCAN_NUMBER){
+                toastShow("scan encount error, error time:" + mScanFailedContinueNum);
+            }
+            mScanFailedContinueNum++;
         }
-        mScanFailedContinueNum++;
-    }
+    };
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
