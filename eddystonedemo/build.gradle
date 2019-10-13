@@ -1,0 +1,34 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion '28.0.3'
+    signingConfigs {
+    }
+
+    defaultConfig {
+        applicationId 'com.kbeacon.eddystone'
+        minSdkVersion 21
+        targetSdkVersion 29
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+    productFlavors {
+    }
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'   // aar目录
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:25.2.0'
+    compile 'com.android.support:appcompat-v7:25.2.0'
+    compile(name:'kbeaconlib-release-v1.0.1', ext:'aar')
+}
