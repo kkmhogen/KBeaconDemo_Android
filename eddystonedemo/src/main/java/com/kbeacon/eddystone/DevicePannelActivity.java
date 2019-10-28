@@ -28,6 +28,7 @@ import com.kbeacon.kbeaconlib.KBeacon;
 import com.kbeacon.kbeaconlib.KBeaconsMgr;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener{
 
@@ -348,12 +349,38 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+    public void ringDevice() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
 
+        mDownloadButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "ring");
+        cmdPara.put("ringTime", 20000);   //ring times, uint is ms
+        cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
+        cmdPara.put("ledOn", 200);   //valid when ringType set to 0x1 or 0x2
+        cmdPara.put("ledOff", 1800); //valid when ringType set to 0x1 or 0x2
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDownloadButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    toastShow("send command to beacon success");
+                }
+                else
+                {
+                    toastShow("send command to beacon error:" + error.errorCode);
+                }
+            }
+        });
+    }
 
     //update device's configuration  to UI
     public void updateDeviceToView()
     {
-        boolean isTLMEnable = false, isUIDEnable = false, isUrlEnable = false;
+        boolean isTLMEnable, isUIDEnable, isUrlEnable;
         KBCfgCommon commonCfg = (KBCfgCommon) mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
         if (commonCfg != null) {
 

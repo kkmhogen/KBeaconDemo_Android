@@ -547,6 +547,46 @@ void updateViewToDevice()
 }
 ```
 
+#### 4.3.4 Send command to device
+After app connect to device success, the app can send command to device.
+#### 4.3.4.1 Ring device
+ For some KBeacon device that has buzzer function. The app can ring device. for ring command, it has 5 paramaters:
+ * msg: msg type is 'ring'
+ * ringTime: uint is ms. The KBeacon will start flash/alert for 'ringTime' millisecond  when receive this command.
+ * ringType: 0x0:led flash only; 0x1:beep alert only; 0x2 both led flash and beep;
+ * ledOn: optional paramaters, uint is ms.the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x1 or 0x2.
+ * ledOff: optional paramaters, uint is ms. the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x1 or 0x2.
+
+```Java
+public void ringDevice() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        mDownloadButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "ring");
+        cmdPara.put("ringTime", 20000);   //ring times, uint is ms
+        cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
+        cmdPara.put("ledOn", 200);   //valid when ringType set to 0x1 or 0x2
+        cmdPara.put("ledOff", 1800); //valid when ringType set to 0x1 or 0x2
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDownloadButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    toastShow("send command to beacon success");
+                }
+                else
+                {
+                    toastShow("send command to beacon error:" + error.errorCode);
+                }
+            }
+        });
+    }
+```
+
 ## 5. Special instructions
 
 > 1. AndroidManifest.xml of SDK has declared to access Bluetooth permissions.
