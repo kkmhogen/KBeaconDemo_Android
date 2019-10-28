@@ -554,8 +554,8 @@ After app connect to device success, the app can send command to device.
  * msg: msg type is 'ring'
  * ringTime: uint is ms. The KBeacon will start flash/alert for 'ringTime' millisecond  when receive this command.
  * ringType: 0x0:led flash only; 0x1:beep alert only; 0x2 both led flash and beep;
- * ledOn: optional paramaters, uint is ms.the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x1 or 0x2.
- * ledOff: optional paramaters, uint is ms. the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x1 or 0x2.
+ * ledOn: optional paramaters, uint is ms.the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x0 or 0x2.
+ * ledOff: optional paramaters, uint is ms. the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x0 or 0x2.
 
 ```Java
 public void ringDevice() {
@@ -568,8 +568,8 @@ public void ringDevice() {
         cmdPara.put("msg", "ring");
         cmdPara.put("ringTime", 20000);   //ring times, uint is ms
         cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
-        cmdPara.put("ledOn", 200);   //valid when ringType set to 0x1 or 0x2
-        cmdPara.put("ledOff", 1800); //valid when ringType set to 0x1 or 0x2
+        cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
+        cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
         mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
             @Override
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
@@ -594,5 +594,6 @@ public void ringDevice() {
 > 3. If you app need running in background, We suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 6. Change log
+* 2019.10.28 v1.2 add beep function
 * 2019.10.11 v1.1 add KSesnor function
 * 2019.4.1 v1.0 first version;
