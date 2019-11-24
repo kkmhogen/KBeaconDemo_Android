@@ -249,13 +249,17 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
 
     private boolean checkBluetoothPermitAllowed(){
         if (!Utils.isLocationBluePermission(this)){
-
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
                     23);
 
             if(ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                toastShow(getString(R.string.location_permit_needed_for_ble));
+            }
+
+            if(ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
                 toastShow(getString(R.string.location_permit_needed_for_ble));
             }
 

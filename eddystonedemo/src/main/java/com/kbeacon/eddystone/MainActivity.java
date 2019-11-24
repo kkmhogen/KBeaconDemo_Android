@@ -302,7 +302,7 @@ public class MainActivity extends AppBaseActivity implements AdapterView.OnItemC
         if (!Utils.isLocationBluePermission(this)){
 
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
                     23);
 
             if(ActivityCompat.shouldShowRequestPermissionRationale(this,
@@ -310,6 +310,10 @@ public class MainActivity extends AppBaseActivity implements AdapterView.OnItemC
                 toastShow(getString(R.string.location_permit_needed_for_ble));
             }
 
+            if(ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+                toastShow(getString(R.string.location_permit_needed_for_ble));
+            }
             return false;
         }
         else{
