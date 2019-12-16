@@ -66,6 +66,12 @@ dependencies {
 <uses-permission android:name="android.permission.BLUETOOTH"/>
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+```  
+For android 10, if you want the app scanning KBeacons in background, please add:  
+```
+<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
 ```
 
 ## 4. How to use SDK
@@ -594,6 +600,7 @@ public void ringDevice() {
 > 3. If you app need running in background, We suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 6. Change log
+* 2019.12.16 v1.21 add android10 permission
 * 2019.10.28 v1.2 add beep function
 * 2019.10.11 v1.1 add KSesnor function
 * 2019.4.1 v1.0 first version;
