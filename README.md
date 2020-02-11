@@ -587,7 +587,11 @@ The push button trigger feature is used in some hospitals, nursing homes and oth
 The app can configure single click, double-click, triple-click, long-press the button trigger, oor a combination.
 
 **Notify:**  
-By KBeacon's default setting, long press button used to power on and off. Clicking button used to force the KBeacon enter connectable broadcast advertisement. So when you enable the long-press button trigger, the long-press power off function will be disabled. When you turn on the single/dobule/triple click trigger, the function of clicking to enter connectable broadcast state will also be disabled. After you disable button trigger, the default function about long press or click button will take effect again.
+* By KBeacon's default setting, long press button used to power on and off. Clicking button used to force the KBeacon enter connectable broadcast advertisement. So when you enable the long-press button trigger, the long-press power off function will be disabled. When you turn on the single/dobule/triple click trigger, the function of clicking to enter connectable broadcast state will also be disabled. After you disable button trigger, the default function about long press or click button will take effect again.
+* iBeacon UUID for single click trigger = Always iBeacon UUID + 0x5
+* iBeacon UUID for single double trigger = Always iBeacon UUID + 0x6
+* iBeacon UUID for single triple trigger = Always iBeacon UUID + 0x7
+* iBeacon UUID for single long press trigger = Always iBeacon UUID + 0x8
 
 1. Enable or button trigger feature.  
 
@@ -766,7 +770,8 @@ public void disableButtonTrigger() {
 #### 4.3.4.2 Motion trigger
 Motion Trigger means that when the device detects movement, it will start broadcasting. You can set the sensitivity of motion detection.  
 **Notify:**  
-When the KBeacon enable the motion trigger, the Acc feature(X, Y, and Z axis detected function) in the KSensor broadcast will be disabled.
+* When the KBeacon enable the motion trigger, the Acc feature(X, Y, and Z axis detected function) in the KSensor broadcast will be disabled.
+* iBeacon UUID for motion Trigger = Always iBeacon UUID + 0x1
 
 Enabling motion trigger is similar to push button trigger, which will not be described in detail here.
 
