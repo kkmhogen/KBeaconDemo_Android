@@ -52,6 +52,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private EditText mEditBeaconTxPower;
     private EditText mEditBeaconName;
     private Button mDownloadButton;
+    private Button mCommandButton;
     private LinearLayout mUrlLayout, mUidLayout, mSettingViewLayout;
 
     @Override
@@ -125,6 +126,9 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mDownloadButton = (Button) findViewById(R.id.buttonSaveData);
         mDownloadButton.setEnabled(false);
         mDownloadButton.setOnClickListener(this);
+
+        mCommandButton = (Button)findViewById(R.id.buttonCommand);
+        mCommandButton.setOnClickListener(this);
     }
 
     @Override
@@ -162,6 +166,12 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         switch (v.getId()) {
             case R.id.buttonSaveData: {
                 updateViewToDevice();
+                break;
+            }
+
+            case R.id.buttonCommand:{
+                ringDevice();
+
                 break;
             }
         }
@@ -336,7 +346,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 }
                 else
                 {
-                    if (error.errorCode == KBException.KBEvtCfgNoParamaters)
+                    if (error.errorCode == KBException.KBEvtCfgNoParameters)
                     {
                         toastShow("No data need to be config");
                     }
@@ -351,6 +361,13 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
     public void ringDevice() {
         if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        if (!cfgCommon.isSupportBeep())
+        {
+            Log.e(LOG_TAG, "device does not support ring feature");
             return;
         }
 
@@ -398,7 +415,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             Log.v(LOG_TAG, "support min tx power:" + commonCfg.getMinTxPower());
 
             //get support trigger
-            Log.v(LOG_TAG, "support trigger" + commonCfg.getTrigCapibility());
+            Log.v(LOG_TAG, "support trigger" + commonCfg.getTrigCapability());
 
             //device model
             mBeaconModel.setText(commonCfg.getModel());

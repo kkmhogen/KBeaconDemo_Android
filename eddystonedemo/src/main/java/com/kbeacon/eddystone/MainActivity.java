@@ -104,7 +104,7 @@ public class MainActivity extends AppBaseActivity implements AdapterView.OnItemC
 
         //set scanning filter
         mBeaconsMgr.setScanMinRssiFilter(-60);
-        mBeaconsMgr.setScanNameFilter("kbeacon", true);
+        //mBeaconsMgr.setScanNameFilter("kbeacon", true);
 
         mListView = (ListView) findViewById(R.id.listview);
         mDevListAdapter = new LeDeviceListAdapter(this, getApplicationContext());
@@ -112,7 +112,6 @@ public class MainActivity extends AppBaseActivity implements AdapterView.OnItemC
         mListView.setOnItemClickListener(this);
 
         swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swipe_container);
-        //设置刷新时动画的颜色，可以设置4个
         swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_light, android.R.color.holo_red_light, android.R.color.holo_orange_light, android.R.color.holo_green_light);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
 

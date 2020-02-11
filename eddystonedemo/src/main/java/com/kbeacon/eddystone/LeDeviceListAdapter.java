@@ -1,6 +1,7 @@
 package com.kbeacon.eddystone;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,8 @@ import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
 import com.kbeacon.kbeaconlib.KBeacon;
 
 public class LeDeviceListAdapter extends BaseAdapter {
+
+    private final static String LOG_TAG = "LeDeviceListAdapter";
 
 	// Adapter for holding devices found through scanning.
 	public interface ListDataSource {
@@ -90,6 +93,8 @@ public class LeDeviceListAdapter extends BaseAdapter {
 
 		if (device.getName() != null && device.getName().length() > 0) {
 			viewHolder.deviceName.setText(device.getName());
+		}else{
+			viewHolder.deviceName.setText("N/A");
 		}
 
 		//common field
@@ -100,11 +105,15 @@ public class LeDeviceListAdapter extends BaseAdapter {
 		String strRssiValue = mContext.getString(R.string.BEACON_RSSI_VALUE) + device.getRssi();
 		viewHolder.rssiState.setText(strRssiValue);
 
+		//battery percent
+		String strBattLvl = mContext.getString(R.string.BEACON_BATTERY) + device.getBatteryPercent();
+		viewHolder.deviceBattery.setText(strBattLvl);
+
 		//tlm data
 		KBAdvPacketEddyTLM tlmBeacon = (KBAdvPacketEddyTLM) device.getAdvPacketByType(KBAdvType.KBAdvTypeEddyTLM);
 		if (tlmBeacon != null) {
-			String strBattLvl = mContext.getString(R.string.BEACON_BATTERY) + tlmBeacon.getBatteryLevel();
-			viewHolder.deviceBattery.setText(strBattLvl);
+		    String strBatteryLvel = tlmBeacon.getBatteryLevel().toString();
+            Log.i(LOG_TAG, "battery level" + strBatteryLvel);
 
 			String strTemp = mContext.getString(R.string.BEACON_TEMP) + tlmBeacon.getTemperature().toString();
 			viewHolder.deviceTempeture.setText(strTemp);

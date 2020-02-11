@@ -16,6 +16,7 @@ import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgIBeacon;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgTrigger;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
 import com.kbeacon.kbeaconlib.KBConnectionEvent;
 import com.kbeacon.kbeaconlib.KBException;
@@ -23,6 +24,7 @@ import com.kbeacon.kbeaconlib.KBeacon;
 import com.kbeacon.kbeaconlib.KBeaconsMgr;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener, KBeacon.ConnStateDelegate{
 
@@ -36,7 +38,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private KBeacon mBeacon;
 
     //uiview
-    private TextView mBeaconType;
+    private TextView mBeaconType, mBeaconStatus;
     private TextView mBeaconModel;
     private EditText mEditBeaconUUID;
     private EditText mEditBeaconMajor;
@@ -45,7 +47,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private EditText mEditBeaconPassword;
     private EditText mEditBeaconTxPower;
     private EditText mEditBeaconName;
-    private Button mDownloadButton;
+    private Button mDownloadButton, mRingButton, mTriggerButton;
     private String mNewPassword;
     SharePreferenceMgr mPref;
 
@@ -64,6 +66,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
         mPref = SharePreferenceMgr.shareInstance(this);
         setContentView(R.layout.device_pannel);
+        mBeaconStatus = (TextView)findViewById(R.id.connection_states);
         mBeaconType = (TextView) findViewById(R.id.beaconType);
         mBeaconModel = (TextView) findViewById(R.id.beaconModle);
         mEditBeaconUUID = (EditText)findViewById(R.id.editIBeaconUUID);
@@ -76,6 +79,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mEditBeaconPassword = (EditText)findViewById(R.id.editPassword);
         mDownloadButton.setEnabled(false);
         mDownloadButton.setOnClickListener(this);
+
+        mRingButton = (Button) findViewById(R.id.ringDevice);
+        mRingButton.setOnClickListener(this);
+        mTriggerButton = (Button) findViewById(R.id.enableBtnTrigger);
+        mTriggerButton.setOnClickListener(this);
     }
 
     @Override
@@ -88,9 +96,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             menu.findItem(R.id.menu_disconnect).setVisible(true);
             menu.findItem(R.id.menu_connecting).setVisible(false);
             menu.findItem(R.id.menu_connecting).setActionView(null);
+            mBeaconStatus.setText("Connected");
         }
         else if (mBeacon.getState() == KBeacon.KBStateConnecting)
         {
+            mBeaconStatus.setText("Connecting");
             menu.findItem(R.id.menu_connect).setEnabled(false);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
             menu.findItem(R.id.menu_connecting).setActionView(
@@ -98,6 +108,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
         else
         {
+            mBeaconStatus.setText("Disconnected");
             menu.findItem(R.id.menu_connect).setEnabled(true);
             menu.findItem(R.id.menu_connect).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
@@ -111,11 +122,242 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     public void onClick(View v)
     {
         switch (v.getId()) {
-            case R.id.buttonSaveData: {
+            case R.id.buttonSaveData:
                 updateViewToDevice();
                 break;
-            }
+
+            case R.id.ringDevice:
+                ringDevice();
+                break;
+
+            case R.id.enableBtnTrigger:
+                enableButtonTrigger();
+                break;
+            default:
+                break;
         }
+    }
+
+    public void enableButtonTrigger() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            Log.e(LOG_TAG, "device does not support push button trigger");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger advertisement enable
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAdv);
+
+            //set trigger adv mode to adv only on trigger
+            btnTriggerPara.setTriggerAdvMode(KBCfgTrigger.KBTriggerAdvOnlyMode);
+
+            //set trigger button para, enable single click and double click
+            btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
+
+            //set trigger adv type
+            btnTriggerPara.setTriggerAdvType(KBAdvType.KBAdvTypeIBeacon);
+
+            //set trigger adv duration to 20 seconds
+            btnTriggerPara.setTriggerAdvTime(20);
+
+            //set the trigger adv interval to 500ms
+            btnTriggerPara.setTriggerAdvInterval(500);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mTriggerButton.setEnabled(false);
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mTriggerButton.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void disableButtonTrigger() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            toastShow( "device does not support push button trigger");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger advertisement enable
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+        } catch (KBException excpt) {
+            Log.e(LOG_TAG, "Input paramaters invalid");
+            return;
+        }
+
+        //disable push button trigger
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess) {
+                    toastShow("disable push button trigger success");
+                } else {
+                    toastShow("disable push button trigger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void readButtonTriggerPara() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            toastShow("device does not support push button trigger");
+            return;
+        }
+
+        //enable push button trigger
+        this.mBeacon.readTriggerConfig(KBCfgTrigger.KBTriggerTypeButton, new KBeacon.ReadConfigCallback() {
+            public void onReadComplete(boolean bConfigSuccess, HashMap<String, Object> paraDicts, KBException error) {
+                if (bConfigSuccess) {
+                    ArrayList<KBCfgTrigger> btnTriggerCfg = (ArrayList<KBCfgTrigger>)paraDicts.get("trObj");
+                    if (btnTriggerCfg != null)
+                    {
+                        KBCfgTrigger btnCfg = btnTriggerCfg.get(0);
+
+                        Log.v(LOG_TAG, "trigger type:" + btnCfg.getTriggerType());
+                        if (btnCfg.getTriggerAction() > 0)
+                        {
+                            //button enable mask
+                            int nButtonEnableInfo = btnCfg.getTriggerPara();
+                            if ((nButtonEnableInfo & KBCfgTrigger.KBTriggerBtnSingleClick) > 0)
+                            {
+                                Log.v(LOG_TAG, "Enable single click trigger");
+                            }
+                            if ((nButtonEnableInfo & KBCfgTrigger.KBTriggerBtnDoubleClick) > 0)
+                            {
+                                Log.v(LOG_TAG, "Enable double click trigger");
+                            }
+                            if ((nButtonEnableInfo & KBCfgTrigger.KBTriggerBtnHold) > 0)
+                            {
+                                Log.v(LOG_TAG, "Enable hold press trigger");
+                            }
+
+                            //button trigger adv mode
+                            if (btnCfg.getTriggerAdvMode()== KBCfgTrigger.KBTriggerAdvOnlyMode)
+                            {
+                                Log.v(LOG_TAG, "device only advertisement when trigger event happened");
+                            }
+                            else if (btnCfg.getTriggerAdvMode() == KBCfgTrigger.KBTriggerAdv2AliveMode)
+                            {
+                                Log.v(LOG_TAG, "device will always advertisement, but the uuid is difference when trigger event happened");
+                            }
+
+                            //button trigger adv type
+                            Log.v(LOG_TAG, "Button trigger adv type:" + btnCfg.getTriggerAdvType());
+
+                            //button trigger adv duration, uint is sec
+                            Log.v(LOG_TAG, "Button trigger adv duration:" + btnCfg.getTriggerAdvTime());
+
+                            //button trigger adv interval, uint is ms
+                            Log.v(LOG_TAG, "Button trigger adv interval:%dms" +  btnCfg.getTriggerAdvInterval());
+                        }
+                    }
+
+                    toastShow("enable push button trigger success");
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void resetParameters() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        mDownloadButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "reset");
+        mRingButton.setEnabled(false);
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mRingButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    //disconnect with device to make sure the new parameters take effect
+                    mBeacon.disconnect();
+                    toastShow("send reset command to beacon success");
+                }
+                else
+                {
+                    toastShow("send reset command to beacon error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void ringDevice() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        if (!cfgCommon.isSupportBeep())
+        {
+            toastShow("device does not support ring feature");
+            return;
+        }
+
+        mDownloadButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "ring");
+        cmdPara.put("ringTime", 20000);   //ring times, uint is ms
+        cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
+        cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
+        cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
+        mRingButton.setEnabled(false);
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mRingButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    toastShow("send command to beacon success");
+                }
+                else
+                {
+                    toastShow("send command to beacon error:" + error.errorCode);
+                }
+            }
+        });
     }
 
     void updateViewToDevice()
@@ -224,9 +466,33 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                     }
                     else
                     {
-                        if (error.errorCode == KBException.KBEvtCfgNoParamaters)
+                        if (error.errorCode == KBException.KBEvtCfgNoParameters)
                         {
-                            toastShow("No data need to be config");
+                            toastShow("Config parameters is null, no data need to be sent");
+                        }
+                        else if (error.errorCode == KBException.KBEvtCfgBusy)
+                        {
+                            toastShow("Another configruation is not complete");
+                        }
+                        else if (error.errorCode == KBException.KBEvtCfgFailed)
+                        {
+                            toastShow("Device return failed");
+                        }
+                        else if (error.errorCode == KBException.KBEvtCfgTimeout)
+                        {
+                            toastShow("send parameters to device timeout");
+                        }
+                        else if (error.errorCode == KBException.KBEvtCfgInputInvalid)
+                        {
+                            toastShow("Input parameters invalid");
+                        }
+                        else if (error.errorCode == KBException.KBEvtCfgStateError)
+                        {
+                            toastShow("Please make sure the device was connected");
+                        }
+                        else if (error.errorCode == KBException.KBEvtCfgNotSupport)
+                        {
+                            toastShow("Device does not support the parameters");
                         }
                         else
                         {

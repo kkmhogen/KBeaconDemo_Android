@@ -327,6 +327,24 @@
                 android:paddingRight="20dp"
                 android:text="@string/BEACON_DOWNLOAD" />
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center|center_horizontal|center_vertical"
+            android:orientation="horizontal"
+            android:weightSum="1.0">
+
+            <Button
+                android:id="@+id/buttonCommand"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                android:text="@string/ring_device" />
+        </LinearLayout>
+
     </LinearLayout>
     </ScrollView>
 </LinearLayout>

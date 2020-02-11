@@ -125,7 +125,7 @@
     <string name="BEACON_NEW_PWD">Change Password:</string>
     <string name="BEACON_NEW_PWD_EXP">(6 character)</string>
 
-    <string name="BEACON_DOWNLOAD">Download data</string>
+    <string name="BEACON_DOWNLOAD">Download configruation</string>
 
     <string name="DISCOVER_SRV">DiscoverServing</string>
     <string name="devMenuUpload">Save</string>
@@ -241,4 +241,9 @@
     <string name="bluetooth_error_need_reboot">Android OS Bluetooth error, please try to reboot bluetooth function(turn off bluetooth and turn on bluetooth). If it still failed, please try to reboot the phone.</string>
 
     <string name="double_click_quit">Double click to quit app</string>
+
+    <string name="test_command">Other test command:</string>
+    <string name="ring_device_btn_title">Ring device</string>
+
+    <string name="enable_btn_trigger">Enable Btn Trigger</string>
 </resources>

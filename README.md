@@ -222,7 +222,7 @@ mBeaconsMgr. stopScanning();
 ```
 
 ### 4.2 Connect to device
- 1. If the app want to change the device paramaters, then it need connect to the device.
+ 1. If the app want to change the device parameters, then it need connect to the device.
  ```Java
 mBeacon.connect(password, max_timeout,  connectionDelegate);
  ```
@@ -292,7 +292,7 @@ For example: advertisment period was set to 500ms. Advertisment type was set to 
 
 
 #### 4.3.2 Get device parameters
-After the app connect to KBeacon success. The KBeacon will automatically read current paramaters from physical device. so the app can update UI and show the paramaters to user after connection setup.  
+After the app connect to KBeacon success. The KBeacon will automatically read current parameters from physical device. so the app can update UI and show the parameters to user after connection setup.  
  ```Java
 private KBeacon.ConnStateDelegate connectionDelegate = new KBeacon.ConnStateDelegate()
 {
@@ -369,7 +369,7 @@ public void updateDeviceToView()
         Log.v(LOG_TAG, "iBeacon advertisment enable:" + ((commonCfg.getAdvType() & KBAdvType.KBAdvTypeSensor) > 0));
     }
 
-    //get eddystone URL paramaters
+    //get eddystone URL parameters
     KBCfgEddyURL beaconUrlCfg = (KBCfgEddyURL) mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeEddyURL);
     if (beaconUrlCfg != null) {
         mEditEddyURL.setText(beaconUrlCfg.getUrl());
@@ -388,7 +388,7 @@ public void updateDeviceToView()
 
 #### 4.3.3 Update device parameters
 
-After app connect to device success, the app can update update paramaters of physical device.
+After app connect to device success, the app can update update parameters of physical device.
 Example1: app update advertisment period, tx power, device name
 ```Java
 public void simpleUpdateDeviceTest() {
@@ -396,7 +396,7 @@ public void simpleUpdateDeviceTest() {
         return;
     }
 
-    //get current paramaters
+    //change parameters
     KBCfgCommon newCommomCfg = new KBCfgCommon();
     try {
         newCommomCfg.setAdvPeriod(1000);
@@ -429,8 +429,8 @@ public void simpleUpdateDeviceTest() {
 
 ```
 
-Sometimes the app need to configure multiple advertisment type parameters at the same time. We recommend that the app should check whether the parameters was changed before update. If the paramaters value is no change, the app do not need to send the configuration.  
-Example2: check if the paramaters was changed, then send new paramaters to device
+Sometimes the app need to configure multiple advertisment type parameters at the same time. We recommend that the app should check whether the parameters was changed before update. If the parameters value is no change, the app do not need to send the configuration.  
+Example2: check if the parameters was changed, then send new parameters to device
 ```Java
 //read user input and download to KBeacon device
 void updateViewToDevice()
@@ -539,7 +539,7 @@ void updateViewToDevice()
             }
             else
             {
-                if (error.errorCode == KBException.KBEvtCfgNoParamaters)
+                if (error.errorCode == KBException.KBEvtCfgNoParameters)
                 {
                     toastShow("No data need to be config");
                 }
@@ -553,15 +553,259 @@ void updateViewToDevice()
 }
 ```
 
-#### 4.3.4 Send command to device
-After app connect to device success, the app can send command to device.
-#### 4.3.4.1 Ring device
- For some KBeacon device that has buzzer function. The app can ring device. for ring command, it has 5 paramaters:
+#### 4.3.4 Modify trigger parameters
+ For some KBeacon device that has motion or push button. The app can set advertisement trigger and the device will advertise when the trigger condition is met. the trigger advertisement has follow parameters:
+ * Trigger advertisement Mode: There are two modes of trigger advertisement. One mode is to broadcast only when the trigger is satisfied. The other mode is always broadcasting, and the content of advertisement packet will change when the trigger conditions are met.
+ * Trigger parameters: For motion trigger, the parameters is accleration sensitivity. For button trigger, you can set different trigger event(single click, double click, etc.,).
+ *	Trigger advertisement type: The advertisement packet type when trigger event happened. it can be seting to iBeacon, Eddystone or KSensor advertisement.
+ *	Trigger advertisement duration: The advertisement duration when trigger event happened.
+ *	Trigger advertisement interval: The bluetooth advertisement interval for trigger advertisement.  You can set a different value from alive broadcast.  
+
+ Example 1:  
+  &nbsp;&nbsp;Trigger adv mode: seting to broadcast only on trigger event happened  
+  &nbsp;&nbsp;Trigger adv type: iBeacon  
+  &nbsp;&nbsp;Trigger adv duration: 30 seconds  
+	&nbsp;&nbsp;Trigger adv interval: 300ms  
+	![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/only_adv_when_trigger.png?raw=true)
+
+ Example 2:  
+	&nbsp;For some senario, we need to continuously monitor the KBeacon to ensure that the device was alive, so we set the trigger advertisement mode to always advertisement.   
+	&nbsp;We set an larger advertisement interval during alive advertisement and a short advertisement interval when trigger event happened, so we can achieve a balance between power consumption and triggers advertisement be easily detected.  
+   &nbsp;&nbsp;Trigger adv mode: seting to Always advertisment  
+   &nbsp;&nbsp;Trigger adv type: iBeacon  
+   &nbsp;&nbsp;Trigger adv duration: 30 seconds  
+ 	 &nbsp;&nbsp;Trigger adv interval: 300ms  
+	 &nbsp;&nbsp;Always adv interval: 2000ms
+ 	![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/always_adv_with_trigger.png?raw=true)
+
+
+**Notify:**  
+  The SDK will not automatically read trigger configuration after connection setup complete. So the app need read the trigger configuration manual if the app needed. Please referance 4.3.4.1 code for read trigger parameters from device.  
+
+#### 4.3.4.1 Push button trigger
+The push button trigger feature is used in some hospitals, nursing homes and other scenarios. When the user encounters some emergency event, they can click the button and the KBeacon device will start broadcast.
+The app can configure single click, double-click, triple-click, long-press the button trigger, oor a combination.
+
+**Notify:**  
+By KBeacon's default setting, long press button used to power on and off. Clicking button used to force the KBeacon enter connectable broadcast advertisement. So when you enable the long-press button trigger, the long-press power off function will be disabled. When you turn on the single/dobule/triple click trigger, the function of clicking to enter connectable broadcast state will also be disabled. After you disable button trigger, the default function about long press or click button will take effect again.
+
+1. Enable or button trigger feature.  
+
+```Java
+//the code was in DevicePannelActivity.java file that in ibeacondemo project
+public void enableButtonTrigger() {
+      if (!mBeacon.isConnected()) {
+          return;
+      }
+
+      //check device capability
+      int nTriggerCapability = mBeacon.triggerCapability();
+      if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+          Log.e(LOG_TAG, "device does not support push button trigger");
+          return;
+      }
+
+      KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+      try {
+          //set trigger type
+          btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+          //set trigger advertisement enable
+          btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAdv);
+
+          //set trigger adv mode to adv only on trigger
+          btnTriggerPara.setTriggerAdvMode(KBCfgTrigger.KBTriggerAdvOnlyMode);
+
+          //set trigger button para, enable single click and double click
+          btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
+
+          //set trigger adv type
+          btnTriggerPara.setTriggerAdvType(KBAdvType.KBAdvTypeIBeacon);
+
+          //set trigger adv duration to 20 seconds
+          btnTriggerPara.setTriggerAdvTime(20);
+
+          //set the trigger adv interval to 500ms
+          btnTriggerPara.setTriggerAdvInterval(500);
+      } catch (KBException excpt) {
+          excpt.printStackTrace();
+          return;
+      }
+
+      //enable push button trigger
+      mTriggerButton.setEnabled(false);
+      this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+          public void onActionComplete(boolean bConfigSuccess, KBException error) {
+              mTriggerButton.setEnabled(true);
+              if (bConfigSuccess) {
+                  toastShow("enable push button trigger success");
+              } else {
+                  toastShow("enable push button trgger error:" + error.errorCode);
+              }
+          }
+      });
+  }
+```
+
+2. The app can disable the button trigger
+
+```Java
+//disable button trigger
+public void disableButtonTrigger() {
+     if (!mBeacon.isConnected()) {
+         return;
+     }
+
+     //check device capability
+     int nTriggerCapability = mBeacon.triggerCapability();
+     if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+         toastShow( "device does not support push button trigger");
+         return;
+     }
+
+     KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+     try {
+         //set trigger type
+         btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+         //set trigger advertisement enable
+         btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+     } catch (KBException excpt) {
+         Log.e(LOG_TAG, "Input parameters invalid");
+         return;
+     }
+
+     //disable push button trigger
+     this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+         public void onActionComplete(boolean bConfigSuccess, KBException error) {
+             if (bConfigSuccess) {
+                 toastShow("disable push button trigger success");
+             } else {
+                 toastShow("disable push button trigger error:" + error.errorCode);
+             }
+         }
+     });
+ }
+```
+
+3. The app can read the button current trigger parameters from KBeacon by follow code  
+
+```Java
+ //read button trigger information
+ public void readButtonTriggerPara() {
+      if (!mBeacon.isConnected()) {
+          return;
+      }
+
+      //check device capability
+      int nTriggerCapability = mBeacon.triggerCapability();
+      if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+          toastShow("device does not support push button trigger");
+          return;
+      }
+
+      //enable push button trigger
+      this.mBeacon.readTriggerConfig(KBCfgTrigger.KBTriggerTypeButton, new KBeacon.ReadConfigCallback() {
+          public void onReadComplete(boolean bConfigSuccess, HashMap<String, Object> paraDicts, KBException error) {
+              if (bConfigSuccess) {
+                  ArrayList<KBCfgTrigger> btnTriggerCfg = (ArrayList<KBCfgTrigger>)paraDicts.get("trObj");
+                  if (btnTriggerCfg != null)
+                  {
+                      KBCfgTrigger btnCfg = btnTriggerCfg.get(0);
+
+                      Log.v(LOG_TAG, "trigger type:" + btnCfg.getTriggerType());
+                      if (btnCfg.getTriggerAction() > 0)
+                      {
+                          //button enable mask
+                          int nButtonEnableInfo = btnCfg.getTriggerPara();
+                          if ((nButtonEnableInfo & KBCfgTrigger.KBTriggerBtnSingleClick) > 0)
+                          {
+                              Log.v(LOG_TAG, "Enable single click trigger");
+                          }
+                          if ((nButtonEnableInfo & KBCfgTrigger.KBTriggerBtnDoubleClick) > 0)
+                          {
+                              Log.v(LOG_TAG, "Enable double click trigger");
+                          }
+                          if ((nButtonEnableInfo & KBCfgTrigger.KBTriggerBtnHold) > 0)
+                          {
+                              Log.v(LOG_TAG, "Enable hold press trigger");
+                          }
+
+                          //button trigger adv mode
+                          if (btnCfg.getTriggerAdvMode()== KBCfgTrigger.KBTriggerAdvOnlyMode)
+                          {
+                              Log.v(LOG_TAG, "device only advertisement when trigger event happened");
+                          }
+                          else if (btnCfg.getTriggerAdvMode() == KBCfgTrigger.KBTriggerAdv2AliveMode)
+                          {
+                              Log.v(LOG_TAG, "device will always advertisement, but the uuid is difference when trigger event happened");
+                          }
+
+                          //button trigger adv type
+                          Log.v(LOG_TAG, "Button trigger adv type:" + btnCfg.getTriggerAdvType());
+
+                          //button trigger adv duration, uint is sec
+                          Log.v(LOG_TAG, "Button trigger adv duration:" + btnCfg.getTriggerAdvTime());
+
+                          //button trigger adv interval, uint is ms
+                          Log.v(LOG_TAG, "Button trigger adv interval:%dms" +  btnCfg.getTriggerAdvInterval());
+                      }
+                  }
+
+                  toastShow("enable push button trigger success");
+              } else {
+                  toastShow("enable push button trgger error:" + error.errorCode);
+              }
+          }
+      });
+  }
+ ```
+
+#### 4.3.4.2 Motion trigger
+Motion Trigger means that when the device detects movement, it will start broadcasting. You can set the sensitivity of motion detection.  
+**Notify:**  
+When the KBeacon enable the motion trigger, the Acc feature(X, Y, and Z axis detected function) in the KSensor broadcast will be disabled.
+
+Enabling motion trigger is similar to push button trigger, which will not be described in detail here.
+
+1. Enable or button trigger feature.  
+
+```Java
+-(void)enableMotionTrigger
+{
+    ... same as push button trigger
+
+    //check device capability
+    int nTriggerCapability = mBeacon.triggerCapability();
+    if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeMotion) == 0) {
+        Log.e(LOG_TAG, "device does not support motion trigger");
+        return;
+    }
+
+    ... same as push button trigger
+
+    //set trigger type
+    btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeMotion);
+
+    //set motion trigger sensitivity, the valid range is 2~31. The uint is 16mg.
+    btnTriggerPara.setTriggerPara(3);
+
+    ... same as push button trigger
+}
+```
+
+#### 4.3.5 Send command to device
+After app connect to device success, the app can send command to device.  
+All command message between app and KBeacon are JSON format. our SDK provide HashMap to encapsulate these JSON message.
+#### 4.3.5.1 Ring device
+ For some KBeacon device that has buzzer function. The app can ring device. for ring command, it has 5 parameters:
  * msg: msg type is 'ring'
  * ringTime: uint is ms. The KBeacon will start flash/alert for 'ringTime' millisecond  when receive this command.
  * ringType: 0x0:led flash only; 0x1:beep alert only; 0x2 both led flash and beep;
- * ledOn: optional paramaters, uint is ms.the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x0 or 0x2.
- * ledOff: optional paramaters, uint is ms. the LED will flash at interval (ledOn + ledOff).  This paramaters is valid when ringType set to 0x0 or 0x2.
+ * ledOn: optional parameters, uint is ms.the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.
+ * ledOff: optional parameters, uint is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.
 
 ```Java
 public void ringDevice() {
@@ -592,6 +836,97 @@ public void ringDevice() {
         });
     }
 ```
+
+#### 4.3.5.2 Reset configruation to default
+ The app can using follow command to reset all configruation to default.
+ * msg: msg type is 'reset'
+
+```Java
+    public void resetParameters() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        mDownloadButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "reset");
+        mRingButton.setEnabled(false);
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mRingButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    //disconnect with device to make sure the new parameters take effect
+                    mBeacon.disconnect();
+                    toastShow("send reset command to beacon success");
+                }
+                else
+                {
+                    toastShow("send reset command to beacon error:" + error.errorCode);
+                }
+            }
+        });
+    }
+```
+
+#### 4.3.6 Error cause in configruation/command
+ The app can using follow command to reset all configruation to default.
+ * KBException.KBEvtCfgNoParamaters: parameters is null
+ * KBException.KBEvtCfgBusy: device is busy, please make sure last configruation complete
+ * KBException.KBEvtCfgFailed: device return failed.
+ * KBException.KBEvtCfgTimeout: configruation timeout
+ * KBException.KBEvtCfgInputInvalid: input paramaters data not in valid range
+ * KBException.KBEvtCfgStateError: device is not in connected state
+ * KBException.KBEvtCfgNotSupport: device does not support the parameters
+
+ ```Java
+{
+    ...other code
+    mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback()
+    {
+        @Override
+        public void onActionComplete(boolean bConfigSuccess, KBException error)
+        {
+            if (!bConfigSuccess)
+            {
+                if (error.errorCode == KBException.KBEvtCfgNoParamaters)
+                {
+                    toastShow("Config parameters is null, no data need to be sent");
+                }
+                else if (error.errorCode == KBException.KBEvtCfgBusy)
+                {
+                    toastShow("Another configruation is not complete");
+                }
+                else if (error.errorCode == KBException.KBEvtCfgFailed)
+                {
+                    toastShow("Device return failed");
+                }
+                else if (error.errorCode == KBException.KBEvtCfgTimeout)
+                {
+                    toastShow("send parameters to device timeout");
+                }
+                else if (error.errorCode == KBException.KBEvtCfgInputInvalid)
+                {
+                    toastShow("Input parameters invalid");
+                }
+                else if (error.errorCode == KBException.KBEvtCfgStateError)
+                {
+                    toastShow("Please make sure the device was connected");
+                }
+                else if (error.errorCode == KBException.KBEvtCfgNotSupport)
+                {
+                    toastShow("Device does not support the parameters");
+                }
+                else
+                {
+                    toastShow("config failed for error:" + error.errorCode);
+                }
+            }
+        }
+    });
+}
+ ```
 
 ## 5. Special instructions
 
