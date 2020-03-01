@@ -283,7 +283,7 @@ For example, advertisment period was set to 500ms. Advertisment type was set to 
 |`Adv type`|KSensor|UID|iBeacon|URL|KSensor|UID|iBeacon|URL
 
 
-If the advertisment type include TLM, the TLM advertisment interval is fixed to 10. It means the TLM will advertisement every 10 other advertisement packet.  
+If the advertisment type contains TLM and other types, the KBeacon will send 1 TLM advertisement every 10 advertisement packets by default configruation.
 For example: advertisment period was set to 500ms. Advertisment type was set to “URL + TLM”, then the advertisment packet is like follow
 
 |Time|0|500|1000|1500|2000|2500|3000|3500|4000|4500|5000
@@ -291,8 +291,11 @@ For example: advertisment period was set to 500ms. Advertisment type was set to 
 |`Adv type`|URL|URL|URL|URL|URL|URL|URL|URL|URL|TLM|URL
 
 
+**Notify:**  
+  For the advertisement period, Apple has some suggestions that make the device more easily discovered by IOS phones. (The suggest value was: 152.5 ms; 211.25 ms; 318.75 ms; 417.5 ms; 546.25 ms; 760 ms; 852.5 ms; 1022.5 ms; 1285 ms). For more information, please refer to Section 3.5 in "Bluetooth Accessory Design Guidelines for Apple Products". The doucument link: https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf.
+
 #### 4.3.2 Get device parameters
-After the app connect to KBeacon success. The KBeacon will automatically read current parameters from physical device. so the app can update UI and show the parameters to user after connection setup.  
+After the app connect to KBeacon success. The KBeacon will automatically read current parameters from KBeacon device. so the app can update UI and show the parameters to user after connection setup.  
  ```Java
 private KBeacon.ConnStateDelegate connectionDelegate = new KBeacon.ConnStateDelegate()
 {
@@ -367,6 +370,9 @@ public void updateDeviceToView()
 
         //check if KSensor advertisment enable
         Log.v(LOG_TAG, "iBeacon advertisment enable:" + ((commonCfg.getAdvType() & KBAdvType.KBAdvTypeSensor) > 0));
+
+        //check TLM adv interval
+        Log.v(LOG_TAG, "TLM adv interval:" + commonCfg.getTLMAdvInterval());
     }
 
     //get eddystone URL parameters
@@ -388,10 +394,36 @@ public void updateDeviceToView()
 
 #### 4.3.3 Update device parameters
 
-After app connect to device success, the app can update update parameters of physical device.
-Example1: app update advertisment period, tx power, device name
+After app connect to device success, the app can update update parameters of device.
+
+##### 4.3.3.1 Update common parameters
+The app can modify the basic parameters of KBeacon through the KBCfgCommon class. The KBCfgCommon has follow parameters:
+
+* name: device name, the device name must < 18 character
+
+* advType: beacon type, can be setting to iBeacon, KSesnor, Eddy TLM/UID/ etc.,
+
+* advPeriod: advertisement period, the value can be set to 100~10000ms
+
+* txPower: advertisement TX power, uint is dBm.
+
+* autoAdvAfterPowerOn: if autoAdvAfterPowerOn was setting to true, the beacon always advertisement if it has battery. If this value was setting to false, the beacon will power off if long press button for 5 seconds.
+
+* tlmAdvInterval: eddystone TLM advertisement interval. the default value is 10. The KBeacon will send 1 TLM advertisement every 10 advertisement packets
+
+* refPower1Meters: the rx power at 1 meters
+
+* advConnectable: is beacon advertisement can be connectable.  
+  **Warning:**   
+   if the app set the KBeacon to un-connectable, the app can not connect to it again if it does not has button. If the device has button, the device can enter connect-able advertisement for 60 seconds when click on the button
+
+* password: device password, the password length must >= 8 character and <= 16 character.  
+ **Warning:**   
+ Be sure to remember the new password, you won’t be able to connect to the device if you forget the new password.
+
+ Example: Update common parameters
 ```Java
-public void simpleUpdateDeviceTest() {
+public void updateBeaconCommonPara() {
     if (!mBeacon.isConnected()) {
         return;
     }
@@ -399,9 +431,23 @@ public void simpleUpdateDeviceTest() {
     //change parameters
     KBCfgCommon newCommomCfg = new KBCfgCommon();
     try {
-        newCommomCfg.setAdvPeriod(1000);
-        newCommomCfg.setTxPower(-4);
+        //set device name
         newCommomCfg.setName("KBeaconDemo");
+
+        //set advertisement period
+        newCommomCfg.setAdvPeriod(1000f);
+
+        //set tx power on
+        newCommomCfg.setTxPower(-4);
+
+        //set the device to un-connectable.
+        // Warning: if the app set the KBeacon to un-connectable, the app can not connect to it if it does not has button.
+        // If the device has button, the device can enter connect-able advertisement for 60 seconds when click on the button
+        newCommomCfg.setAdvConnectable(0);
+
+        //set device to always power on
+        //the autoAdvAfterPowerOn is enable, the device will not allowed power off by long press button
+        newCommomCfg.setAutoAdvAfterPowerOn(0);
     } catch (KBException excpt) {
         toastShow("input data invalid");
         excpt.printStackTrace();
@@ -409,14 +455,111 @@ public void simpleUpdateDeviceTest() {
 
     ArrayList<KBCfgBase> cfgList = new ArrayList<>(1);
     cfgList.add(newCommomCfg);
-    mDownloadButton.setEnabled(false);
     mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
         @Override
         public void onActionComplete(boolean bConfigSuccess, KBException error) {
             mDownloadButton.setEnabled(true);
             if (bConfigSuccess)
             {
-                clearChangeTag();
+                toastShow("config data to beacon success");
+            }
+            else
+            {
+                toastShow("config failed for error:" + error.errorCode);
+            }
+        }
+    });
+}
+```
+
+##### 4.3.3.2 Update iBeacon parameters
+The app can modify the basic parameters of KBeacon through the KBCfgIBeacon class. The KBCfgIBeacon has follow parameters:
+uuid: iBeacon uuid
+majorID: iBeacon major ID
+minorID: iBeacon minor ID
+please make sure the KBeacon advertisement type was set to iBeacon.
+
+example: config the KBeacon to broadcasting iBeacon packet
+```Java
+public void updateIBeaconPara()
+{
+    if (!mBeacon.isConnected()) {
+        return;
+    }
+
+    //change parameters
+    KBCfgCommon commonPara = new KBCfgCommon();
+    KBCfgIBeacon iBeaconPara = new KBCfgIBeacon();
+    try {
+        //set adv type to iBeacon
+        commonPara.setAdvType(KBAdvType.KBAdvTypeIBeacon);
+
+        //set iBeacon para
+        iBeaconPara.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
+        iBeaconPara.setMajorID(645);
+        iBeaconPara.setMinorID(741);
+    } catch (KBException excpt) {
+        toastShow("input data invalid");
+        excpt.printStackTrace();
+    }
+
+    ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+    cfgList.add(commonPara);
+    cfgList.add(iBeaconPara);
+    mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+        @Override
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess)
+            {
+                toastShow("config data to beacon success");
+            }
+            else
+            {
+                toastShow("config failed for error:" + error.errorCode);
+            }
+        }
+    });
+}
+```
+
+##### 4.3.3.3 Update Eddystone parameters
+The app can modify the eddystone parameters of KBeacon through the KBCfgEddyURL and KBCfgEddyUID class.  
+The KBCfgEddyURL has follow parameters:
+* url: eddystone URL address
+
+The KBCfgEddyUID has follow parameters:
+* nid: namespace id about UID. It is 10 bytes length hex string value.
+* sid: instance id about UID. It is 6 bytes length hex string value.
+
+```Java
+//example1: update kbeacon to URL
+public void updateKBeaconToEddyUrl() {
+    if (!mBeacon.isConnected()) {
+        return;
+    }
+
+    //change parameters
+    KBCfgCommon commonPara = new KBCfgCommon();
+    KBCfgEddyURL urlPara = new KBCfgEddyURL();
+    try {
+        //set adv type to iBeacon
+        commonPara.setAdvType(KBAdvType.KBAdvTypeEddyURL);
+
+        //url para
+        urlPara.setUrl("https://www.google.com/");
+    } catch (KBException excpt) {
+        toastShow("input data invalid");
+        excpt.printStackTrace();
+    }
+
+    ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+    cfgList.add(commonPara);
+    cfgList.add(urlPara);
+    mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+        @Override
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess)
+            {
                 toastShow("config data to beacon success");
             }
             else
@@ -427,10 +570,51 @@ public void simpleUpdateDeviceTest() {
     });
 }
 
+//example2: update kbeacon to UID type
+public void updateKBeaconToEddyUID() {
+    if (!mBeacon.isConnected()) {
+        return;
+    }
+
+    //change parameters
+    KBCfgCommon commonPara = new KBCfgCommon();
+    KBCfgEddyUID uidPara = new KBCfgEddyUID();
+    try {
+        //set adv type to iBeacon
+        commonPara.setAdvType(KBAdvType.KBAdvTypeEddyUID);
+
+        //set uid para
+        uidPara.setNid("0x00010203040506070809");
+        uidPara.setSid("0x010203040506");
+    } catch (KBException excpt) {
+        toastShow("input data invalid");
+        excpt.printStackTrace();
+    }
+
+    ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+    cfgList.add(commonPara);
+    cfgList.add(uidPara);
+    mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+        @Override
+        public void onActionComplete(boolean bConfigSuccess, KBException error) {
+            if (bConfigSuccess)
+            {
+                toastShow("config data to beacon success");
+            }
+            else
+            {
+                toastShow("config failed for error:" + error.errorCode);
+            }
+        }
+    });
+}
 ```
 
-Sometimes the app need to configure multiple advertisment type parameters at the same time. We recommend that the app should check whether the parameters was changed before update. If the parameters value is no change, the app do not need to send the configuration.  
-Example2: check if the parameters was changed, then send new parameters to device
+##### 4.3.3.4 Check if parameters are changed
+Sometimes the app need to configure multiple advertisment parameters at the same time.  
+We recommend that the app should check whether the parameters was changed. The app don't need to send the parameters if it's value was not changed. Reducing the parameters will reduce the modification time.
+
+Example: checking if the parameters was changed, then send new parameters to device.
 ```Java
 //read user input and download to KBeacon device
 void updateViewToDevice()
@@ -468,7 +652,7 @@ void updateViewToDevice()
         {
             String strAdvPeriod = mEditBeaconAdvPeriod.getText().toString();
             if (Utils.isPositiveInteger(strAdvPeriod)) {
-                Integer newAdvPeriod = Integer.valueOf(strAdvPeriod);
+                Float newAdvPeriod = Float.valueOf(strAdvPeriod);
                 newCommomCfg.setAdvPeriod(newAdvPeriod);
             }
         }
@@ -517,6 +701,12 @@ void updateViewToDevice()
                 newUrlCfg.setUrl(strUrl);
             }
         }
+
+        //TLM advertisement interval configuration (optional)
+        if (mCheckboxTLM.isChecked()){
+            //The default TLM advertisement interval is 10. The KBeacon will send 1 TLM advertisement packet every 10 advertisement packets.
+            //newCommomCfg.setTLMAdvInterval(8);
+        }
     }catch (KBException excpt)
     {
         toastShow("config data is invalid:" + excpt.errorCode);
@@ -554,7 +744,7 @@ void updateViewToDevice()
 ```
 
 #### 4.3.4 Modify trigger parameters
- For some KBeacon device that has motion or push button. The app can set advertisement trigger and the device will advertise when the trigger condition is met. the trigger advertisement has follow parameters:
+ For some KBeacon device that has some motion sensor, push button, etc., The app can set advertisement trigger and the device will advertise when the trigger condition is met. the trigger advertisement has follow parameters:
  * Trigger advertisement Mode: There are two modes of trigger advertisement. One mode is to broadcast only when the trigger is satisfied. The other mode is always broadcasting, and the content of advertisement packet will change when the trigger conditions are met.
  * Trigger parameters: For motion trigger, the parameters is accleration sensitivity. For button trigger, you can set different trigger event(single click, double click, etc.,).
  *	Trigger advertisement type: The advertisement packet type when trigger event happened. it can be seting to iBeacon, Eddystone or KSensor advertisement.
@@ -631,7 +821,7 @@ public void enableButtonTrigger() {
           btnTriggerPara.setTriggerAdvTime(20);
 
           //set the trigger adv interval to 500ms
-          btnTriggerPara.setTriggerAdvInterval(500);
+          btnTriggerPara.setTriggerAdvInterval(500f);
       } catch (KBException excpt) {
           excpt.printStackTrace();
           return;
@@ -754,7 +944,7 @@ public void disableButtonTrigger() {
                           Log.v(LOG_TAG, "Button trigger adv duration:" + btnCfg.getTriggerAdvTime());
 
                           //button trigger adv interval, uint is ms
-                          Log.v(LOG_TAG, "Button trigger adv interval:%dms" +  btnCfg.getTriggerAdvInterval());
+                          Log.v(LOG_TAG, "Button trigger adv interval:" +  btnCfg.getTriggerAdvInterval());
                       }
                   }
 
@@ -877,11 +1067,11 @@ public void ringDevice() {
 
 #### 4.3.6 Error cause in configruation/command
  The app can using follow command to reset all configruation to default.
- * KBException.KBEvtCfgNoParamaters: parameters is null
+ * KBException.KBEvtCfgNoParameters: parameters is null
  * KBException.KBEvtCfgBusy: device is busy, please make sure last configruation complete
  * KBException.KBEvtCfgFailed: device return failed.
  * KBException.KBEvtCfgTimeout: configruation timeout
- * KBException.KBEvtCfgInputInvalid: input paramaters data not in valid range
+ * KBException.KBEvtCfgInputInvalid: input parameters data not in valid range
  * KBException.KBEvtCfgStateError: device is not in connected state
  * KBException.KBEvtCfgNotSupport: device does not support the parameters
 
@@ -895,7 +1085,7 @@ public void ringDevice() {
         {
             if (!bConfigSuccess)
             {
-                if (error.errorCode == KBException.KBEvtCfgNoParamaters)
+                if (error.errorCode == KBException.KBEvtCfgNoParameters)
                 {
                     toastShow("Config parameters is null, no data need to be sent");
                 }
@@ -940,7 +1130,9 @@ public void ringDevice() {
 > 3. If you app need running in background, We suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 6. Change log
+* 2020.3.1 v1.23 change the adv period type from interger to float
+* 2020.1.16 v1.22 add button trigger
 * 2019.12.16 v1.21 add android10 permission
 * 2019.10.28 v1.2 add beep function
 * 2019.10.11 v1.1 add KSesnor function
-* 2019.4.1 v1.0 first version;
+* 2019.2.1 v1.0 first version;

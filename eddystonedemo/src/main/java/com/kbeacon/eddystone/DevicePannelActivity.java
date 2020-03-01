@@ -212,7 +212,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         //get current paramaters
         KBCfgCommon newCommomCfg = new KBCfgCommon();
         try {
-            newCommomCfg.setAdvPeriod(1000);
+            newCommomCfg.setAdvPeriod(1000f);
             newCommomCfg.setTxPower(-4);
             newCommomCfg.setName("KBeaconDemo");
         } catch (KBException excpt) {
@@ -276,7 +276,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             {
                 String strAdvPeriod = mEditBeaconAdvPeriod.getText().toString();
                 if (Utils.isPositiveInteger(strAdvPeriod)) {
-                    Integer newAdvPeriod = Integer.valueOf(strAdvPeriod);
+                    Float newAdvPeriod = Float.valueOf(strAdvPeriod);
                     newCommomCfg.setAdvPeriod(newAdvPeriod);
                 }
             }
@@ -324,6 +324,12 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                     newUrlCfg.setUrl(strUrl);
                 }
             }
+
+            //TLM advertisement interval configuration (optional)
+            if (mCheckboxTLM.isChecked()){
+                //The default TLM advertisement interval is 10. The KBeacon will send 1 TLM advertisement packet every 10 advertisement packets.
+                //newCommomCfg.setTLMAdvInterval(8);
+            }
         }catch (KBException excpt)
         {
             toastShow("config data is invalid:" + excpt.errorCode);
@@ -354,6 +360,83 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                     {
                         toastShow("config failed for error:" + error.errorCode);
                     }
+                }
+            }
+        });
+    }
+
+    //example update beacon to URL
+    public void updateKBeaconToEddyUrl() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //change parameters
+        KBCfgCommon commonPara = new KBCfgCommon();
+        KBCfgEddyURL urlPara = new KBCfgEddyURL();
+        try {
+            //set adv type to iBeacon
+            commonPara.setAdvType(KBAdvType.KBAdvTypeEddyURL);
+
+            //url para
+            urlPara.setUrl("https://www.google.com/");
+        } catch (KBException excpt) {
+            toastShow("input data invalid");
+            excpt.printStackTrace();
+        }
+
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+        cfgList.add(commonPara);
+        cfgList.add(urlPara);
+        mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess)
+                {
+                    toastShow("config data to beacon success");
+                }
+                else
+                {
+                    toastShow("config failed for error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //update beacon to UID type
+    public void updateKBeaconToEddyUID() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //change parameters
+        KBCfgCommon commonPara = new KBCfgCommon();
+        KBCfgEddyUID uidPara = new KBCfgEddyUID();
+        try {
+            //set adv type to iBeacon
+            commonPara.setAdvType(KBAdvType.KBAdvTypeEddyUID);
+
+            //set uid para
+            uidPara.setNid("0x00010203040506070809");
+            uidPara.setSid("0x010203040506");
+        } catch (KBException excpt) {
+            toastShow("input data invalid");
+            excpt.printStackTrace();
+        }
+
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+        cfgList.add(commonPara);
+        cfgList.add(uidPara);
+        mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess)
+                {
+                    toastShow("config data to beacon success");
+                }
+                else
+                {
+                    toastShow("config failed for error:" + error.errorCode);
                 }
             }
         });
@@ -454,6 +537,9 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
             //check if KSensor advertisment enable
             Log.v(LOG_TAG, "iBeacon advertisment enable:" + ((commonCfg.getAdvType() & KBAdvType.KBAdvTypeSensor) > 0));
+
+            //check TLM adv interval
+            Log.v(LOG_TAG, "TLM adv interval:" + commonCfg.getTLMAdvInterval());
         }
 
         //get eddystone URL paramaters

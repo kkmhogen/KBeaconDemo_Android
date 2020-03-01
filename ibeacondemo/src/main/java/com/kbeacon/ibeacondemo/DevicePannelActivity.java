@@ -12,9 +12,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvPacketEddyUID;
 import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgEddyUID;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgEddyURL;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgIBeacon;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgTrigger;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
@@ -172,7 +175,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             btnTriggerPara.setTriggerAdvTime(20);
 
             //set the trigger adv interval to 500ms
-            btnTriggerPara.setTriggerAdvInterval(500);
+            btnTriggerPara.setTriggerAdvInterval(500f);
         } catch (KBException excpt) {
             excpt.printStackTrace();
             return;
@@ -281,11 +284,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                             //button trigger adv type
                             Log.v(LOG_TAG, "Button trigger adv type:" + btnCfg.getTriggerAdvType());
 
-                            //button trigger adv duration, uint is sec
+                            //button trigger adv duration, unit is sec
                             Log.v(LOG_TAG, "Button trigger adv duration:" + btnCfg.getTriggerAdvTime());
 
-                            //button trigger adv interval, uint is ms
-                            Log.v(LOG_TAG, "Button trigger adv interval:%dms" +  btnCfg.getTriggerAdvInterval());
+                            //button trigger adv interval, unit is ms
+                            Log.v(LOG_TAG, "Button trigger adv interval:" +  btnCfg.getTriggerAdvInterval());
                         }
                     }
 
@@ -297,33 +300,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
-    public void resetParameters() {
-        if (!mBeacon.isConnected()) {
-            return;
-        }
-
-        mDownloadButton.setEnabled(false);
-        HashMap<String, Object> cmdPara = new HashMap<>(5);
-        cmdPara.put("msg", "reset");
-        mRingButton.setEnabled(false);
-        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
-            @Override
-            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mRingButton.setEnabled(true);
-                if (bConfigSuccess)
-                {
-                    //disconnect with device to make sure the new parameters take effect
-                    mBeacon.disconnect();
-                    toastShow("send reset command to beacon success");
-                }
-                else
-                {
-                    toastShow("send reset command to beacon error:" + error.errorCode);
-                }
-            }
-        });
-    }
-
+    //ring device
     public void ringDevice() {
         if (!mBeacon.isConnected()) {
             return;
@@ -384,7 +361,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             //adv period, check if user change adv period
             String strAdvPeriod = mEditBeaconAdvPeriod.getText().toString();
             if (Utils.isPositiveInteger(strAdvPeriod)) {
-                Integer newAdvPeriod = Integer.valueOf(strAdvPeriod);
+                Float newAdvPeriod = Float.valueOf(strAdvPeriod);
                 if (!newAdvPeriod.equals(oldCommonCfg.getAdvPeriod())) {
                     newCommomCfg.setAdvPeriod(newAdvPeriod);
                 }
@@ -403,12 +380,15 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 }
             }
 
-            //device name
+            //modify device name
             String strDeviceName = mEditBeaconName.getText().toString();
             if (!strDeviceName.equals(oldCommonCfg.getName())) {
                 newCommomCfg.setName(strDeviceName);
             }
 
+            //the password length must >=8 bytes and <= 16 bytes
+            //Be sure to remember your new password, if you forget it, you won’t be able to connect to it.
+            newCommomCfg.setPassword("123456789");
             String strPassword = mEditBeaconPassword.getText().toString();
             if (strPassword.length() > 0) {
                 if (strPassword.length() < 8 || strPassword.length() > 16) {
@@ -506,6 +486,124 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             toastShow("config data is invalid");
             excpt.printStackTrace();
         }
+    }
+
+    public void updateBeaconCommonPara() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //change parameters
+        KBCfgCommon newCommomCfg = new KBCfgCommon();
+        try {
+            //set device name
+            newCommomCfg.setName("KBeaconDemo");
+
+            //set advertisement period
+            newCommomCfg.setAdvPeriod(1000f);
+
+            //set tx power on
+            newCommomCfg.setTxPower(-4);
+
+            //set the device to un-connectable.
+            // Warning: if the app set the KBeacon to un-connectable, the app can not connect to it if it does not has button.
+            // If the device has button, the device can enter connect-able advertisement for 60 seconds when click on the button
+            newCommomCfg.setAdvConnectable(0);
+
+            //set device to always power on
+            //the autoAdvAfterPowerOn is enable, the device will not allowed power off by long press button
+            newCommomCfg.setAutoAdvAfterPowerOn(0);
+
+        } catch (KBException excpt) {
+            toastShow("input data invalid");
+            excpt.printStackTrace();
+        }
+
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(1);
+        cfgList.add(newCommomCfg);
+        mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDownloadButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    toastShow("config data to beacon success");
+                }
+                else
+                {
+                    toastShow("config failed for error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void updateIBeaconPara()
+    {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //change parameters
+        KBCfgCommon commonPara = new KBCfgCommon();
+        KBCfgIBeacon iBeaconPara = new KBCfgIBeacon();
+        try {
+            //set adv type to iBeacon
+            commonPara.setAdvType(KBAdvType.KBAdvTypeIBeacon);
+
+            //set iBeacon para
+            iBeaconPara.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
+            iBeaconPara.setMajorID(645);
+            iBeaconPara.setMinorID(741);
+
+        } catch (KBException excpt) {
+            toastShow("input data invalid");
+            excpt.printStackTrace();
+        }
+
+        ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+        cfgList.add(commonPara);
+        cfgList.add(iBeaconPara);
+        mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess)
+                {
+                    toastShow("config data to beacon success");
+                }
+                else
+                {
+                    toastShow("config failed for error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //example: reset all parameters to default
+    public void resetParameters() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        mDownloadButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "reset");
+        mRingButton.setEnabled(false);
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mRingButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    //disconnect with device to make sure the new parameters take effect
+                    mBeacon.disconnect();
+                    toastShow("send reset command to beacon success");
+                }
+                else
+                {
+                    toastShow("send reset command to beacon error:" + error.errorCode);
+                }
+            }
+        });
     }
 
     public void updateDeviceToView()
