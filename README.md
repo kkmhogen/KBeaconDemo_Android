@@ -965,10 +965,11 @@ public void disableButtonTrigger() {
  ```
 
 #### 4.3.4.2 Motion trigger
-Motion Trigger means that when the device detects movement, it will start broadcasting. You can set the sensitivity of motion detection.  
+The KBeacon can start broadcasting when it detects motion. Also the app can setting the sensitivity of motion detection.  
 **Notify:**  
-* When the KBeacon enable the motion trigger, the Acc feature(X, Y, and Z axis detected function) in the KSensor broadcast will be disabled.
 * iBeacon UUID for motion Trigger = Always iBeacon UUID + 0x1
+* When the KBeacon enable the motion trigger, the Acc feature(X, Y, and Z axis detected function) in the KSensor broadcast will be disabled.
+
 
 Enabling motion trigger is similar to push button trigger, which will not be described in detail here.
 
@@ -1137,9 +1138,9 @@ public void ringDevice() {
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 6. Change log
-* 2020.3.1 v1.23 change the adv period type from integer to float
-* 2020.1.16 v1.22 add button trigger
-* 2019.12.16 v1.21 add android10 permission
-* 2019.10.28 v1.2 add beep function
-* 2019.10.11 v1.1 add KSesnor function
-* 2019.2.1 v1.0 first version;
+* 2020.3.1 v1.23 change the adv period type from integer to float.
+* 2020.1.16 v1.22 add button trigger.
+* 2019.12.16 v1.21 add android10 permission.
+* 2019.10.28 v1.2 add beep function.
+* 2019.10.11 v1.1 add KSesnor function.
+* 2019.2.1 v1.0 first version.
