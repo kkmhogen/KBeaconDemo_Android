@@ -246,4 +246,26 @@
     <string name="ring_device_btn_title">Ring device</string>
 
     <string name="enable_btn_trigger">Enable Btn Trigger</string>
+
+    <string name="DEVICE_DFU_TITLE">Firmware Update</string>
+    <string name="DEVICE_DFU_STATUS">Status</string>
+    <string name="DEVICE_CHECK_UPDATE">Check version…</string>
+    <string name="DEVICE_LATEST_VERSION">Current version is the latest, not need update.</string>
+    <string name="DFU_CONNECT_SERVICE_FAIL">Connect to cloud server failed, please check if the network was connected and give the application network permission</string>
+
+    <string name="DFU_FOUND_NEW_VERSION">A new version(%s) found, do you want to update?</string>
+    <string name="UPDATE_STARTED">Updating…</string>
+    <string name="DFU_TITLE">Update</string>
+
+    <string name="UPDATE_CONNECTING">Connecting for update</string>
+    <string name="UPDATE_UPLOADING">Upload firmware…</string>
+    <string name="UPDATE_DISCONNECTED">Device disconnected!</string>
+    <string name="UPDATE_ABORTED">Update aborted!</string>
+    <string name="UPDATE_CONNECTED">Device connected</string>
+    <string name="UPDATE_COMPLETE">Update success!</string>
+    <string name="UPDATE_NETWORK_FAIL">Network failure!</string>
+    <string name="NB_network_cloud_server_error">Cloud server error</string>
+    <string name="NB_network_file_not_exist">Cloud server file not exist</string>
+
+    <string name="kb_dfu_device">Dfu</string>
 </resources>

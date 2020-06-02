@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.kbeacon.ibeacondemo.dfulibrary.KBeaconDFUActivity;
 import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvPacketEddyUID;
 import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
@@ -87,6 +88,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mRingButton.setOnClickListener(this);
         mTriggerButton = (Button) findViewById(R.id.enableBtnTrigger);
         mTriggerButton.setOnClickListener(this);
+        findViewById(R.id.dfuDevice).setOnClickListener(this);
     }
 
     @Override
@@ -125,6 +127,14 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     public void onClick(View v)
     {
         switch (v.getId()) {
+            case R.id.dfuDevice:
+                if (mBeacon.isConnected()) {
+                    final Intent intent = new Intent(this, KBeaconDFUActivity.class);
+                    intent.putExtra(KBeaconDFUActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());
+                    startActivityForResult(intent, 1);
+                }
+                break;
+
             case R.id.buttonSaveData:
                 updateViewToDevice();
                 break;
@@ -136,6 +146,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             case R.id.enableBtnTrigger:
                 enableButtonTrigger();
                 break;
+
+
             default:
                 break;
         }

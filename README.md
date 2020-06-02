@@ -74,6 +74,7 @@ For android 10, if you want the app scanning KBeacons in background, please add:
 
 ```
 
+
 ## 4. How to use SDK
 ### 4.1 Scanning device
 1. Init KBeaconMgr instance in Activity, also your application should implementation the scanning callback.
@@ -1130,14 +1131,51 @@ public void ringDevice() {
     });
 }
  ```
+## 5. DFU
+Through the DFU function, you can upgrade the firmware of the device. Our DFU function is based on Nordic's DFU library. In order to let you complete the development quickly, We add the DFU function into ibeacondemo project for your reference. The Demo about DFU includes the following class:
+* KBeaconDFUActivity: DFU UI activity.  
+* KBFirmwareDownload: Responsible for download the latest firmware from KKM clouds.
+* DFUService: This DFU service for DFU option.
+* NotificationActivity: During the upgrade, a notification will pop up, click on the notification to enter this activity.
+![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/kbeacon_dfu_arc.png?raw=true)
 
-## 5. Special instructions
+### 5.1 Add DFU function to the application.
+1. The DFU library need download the latest firmware from KKM cloud server. So you need add follow permission into AndroidManifest.xml
+ ```
+<uses-permission android:name="android.permission.INTERNET" />
+ ```
+2. The DFU Demo using nordic DFU library for update. So we need add follow dependency.
+ ```
+implementation 'no.nordicsemi.android:dfu:1.10.3'
+ ```
+
+3. Start DFU activity  
+ ```Java
+ public void onClick(View v)
+{
+    switch (v.getId()) {
+        case R.id.dfuDevice:
+            if (mBeacon.isConnected()) {
+                final Intent intent = new Intent(this, KBeaconDFUActivity.class);
+                intent.putExtra(KBeaconDFUActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());
+                startActivityForResult(intent, 1);
+            }
+            break;
+        }
+}
+```
+If you want to known how to the Device's latest firmware from KKM cloud, or deploied the latest firmware on you cloud. Please contact KKM sales(sales@kkmcn.com) and she/he will  send you a detail document.
+
+ Also for more detail nordic DFU library, please refer to
+https://github.com/NordicSemiconductor/Android-DFU-Library
+
+## 6. Special instructions
 
 > 1. AndroidManifest.xml of SDK has declared to access Bluetooth permissions.
 > 2. After connecting to the device successfully, we suggest delay 1 second to sending configure data, otherwise the device may not return data normally.
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
-## 6. Change log
+## 7. Change log
 * 2020.3.1 v1.23 change the adv period type from integer to float.
 * 2020.1.16 v1.22 add button trigger.
 * 2019.12.16 v1.21 add android10 permission.

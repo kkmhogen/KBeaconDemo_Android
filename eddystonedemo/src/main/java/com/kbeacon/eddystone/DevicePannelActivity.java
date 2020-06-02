@@ -442,6 +442,40 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+    public void stopRingDevice() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        if (!cfgCommon.isSupportBeep())
+        {
+            Log.e(LOG_TAG, "device does not support ring feature");
+            return;
+        }
+
+        mDownloadButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "ring");
+        cmdPara.put("ringTime", 20000);   //ring times, uint is ms
+        cmdPara.put("ringType", 10);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
+
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDownloadButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    toastShow("send command to beacon success");
+                }
+                else
+                {
+                    toastShow("send command to beacon error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
     public void ringDevice() {
         if (!mBeacon.isConnected()) {
             return;

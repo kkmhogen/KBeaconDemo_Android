@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.android.support:support-v4:25.2.0'
-    implementation 'com.android.support:appcompat-v7:25.2.0'
-    implementation(name:'kbeaconlib-release-v1.05', ext:'aar')
+    implementation 'com.android.support:support-v4:29.2.0'
+    implementation 'com.android.support:appcompat-v7:29.2.0'
+    implementation(name:'kbeaconlib-release-v1.06', ext:'aar')
 }
