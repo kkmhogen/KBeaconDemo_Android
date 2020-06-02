@@ -1164,7 +1164,7 @@ implementation 'no.nordicsemi.android:dfu:1.10.3'
         }
 }
 ```
-If you want to known how to the Device's latest firmware from KKM cloud, or deploied the latest firmware on you cloud. Please contact KKM sales(sales@kkmcn.com) and she/he will  send you a detail document.
+If you want to known more details about getting the Device's latest firmware from KKM cloud, or deploied the latest firmware on you cloud. Please contact KKM sales(sales@kkmcn.com) and she/he will send you a detail document.
 
  Also for more detail nordic DFU library, please refer to
 https://github.com/NordicSemiconductor/Android-DFU-Library
