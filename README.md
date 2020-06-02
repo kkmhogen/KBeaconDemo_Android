@@ -1132,10 +1132,10 @@ public void ringDevice() {
 }
  ```
 ## 5. DFU
-Through the DFU function, you can upgrade the firmware of the device. Our DFU function is based on Nordic's DFU library. In order to let you complete the development quickly, We add the DFU function into ibeacondemo project for your reference. The Demo about DFU includes the following class:
-* KBeaconDFUActivity: DFU UI activity.  
-* KBFirmwareDownload: Responsible for download the latest firmware from KKM clouds.
-* DFUService: This DFU service for DFU option.
+Through the DFU function, you can upgrade the firmware of the device. Our DFU function is based on Nordic's DFU library. In order to make it easier for you to integrate the DFU function, We add the DFU function into ibeacondemo demo project for your reference. The Demo about DFU includes the following class:
+* KBeaconDFUActivity: DFU UI activity and procedure about how to download latest firmware.
+* KBFirmwareDownload: Responsible for download the JSON or firmware from KKM clouds.
+* DFUService: This DFU service that implementation Nordic's DFU library.
 * NotificationActivity: During the upgrade, a notification will pop up, click on the notification to enter this activity.
 ![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/kbeacon_dfu_arc.png?raw=true)
 
