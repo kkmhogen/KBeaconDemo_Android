@@ -22,6 +22,12 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
 /**
@@ -148,5 +154,32 @@ public class Utils {
         strUserUUID += strUUID.substring(20);
 
         return strUserUUID;
+    }
+
+    public static String ReadTxtFile(File file)
+    {
+        StringBuilder content = new StringBuilder();
+
+        try {
+            InputStream instream = new FileInputStream(file);
+            InputStreamReader inputreader = new InputStreamReader(instream);
+            BufferedReader buffreader = new BufferedReader(inputreader);
+            String line;
+            //分行读取
+            while (( line = buffreader.readLine()) != null) {
+                content.append(line);
+            }
+            instream.close();
+        }
+        catch (java.io.FileNotFoundException e)
+        {
+            return null;
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+
+        return content.toString();
     }
 }

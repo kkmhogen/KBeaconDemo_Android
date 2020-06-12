@@ -6,15 +6,13 @@ We provide AAR format SDK library on Github, you can found it in directory:
 ./aar-sdk/kbeaconlib-release-xxx.aar
 
 With this SDK, you can scan and configure the KBeacon device. The SDK include follow main class:
-* KBeaconsMgr: Global definition, responsible for scanning KBeacon devices advertisment packet, and monitoring the Bluetooth status of the system;
+* KBeaconsMgr: Global definition, responsible for scanning KBeacon devices advertisment packet, and monitoring the Bluetooth status of the system;  
 
 * KBeacon: An instance of a KBeacon device, KBeaconsMgr creates an instance of KBeacon while it found a physical device. Each KBeacon instance has three properties: KBAdvPacketHandler, KBAuthHandler, KBCfgHandler.
-
-* KBAdvPacketHandler: parsing advertisement packet. This attribute is valid during the scan phase.
-
-*	KBAuthHandler: Responsible for the authentication operation with the KBeacon device after the connection is established.
-
-*	KBCfgHandler：Responsible for configuring parameters related to KBeacon devices
+* KBAdvPacketHandler: parsing advertisement packet. This attribute is valid during the scan phase.  
+*	KBAuthHandler: Responsible for the authentication operation with the KBeacon device after the connection is established.  
+*	KBCfgHandler：Responsible for configuring parameters related to KBeacon devices.  
+* DFU Library: Responsible for KBeacon firmware update.
 ![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/kbeacon_class_arc.png?raw=true)
 
 **Scanning Stage**

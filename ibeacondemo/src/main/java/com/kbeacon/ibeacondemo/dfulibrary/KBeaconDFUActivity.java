@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -17,18 +18,20 @@ import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
 import com.kbeacon.kbeaconlib.KBException;
-import com.kbeacon.kbeaconlib.KBUtility;
 import com.kbeacon.kbeaconlib.KBeacon;
 import com.kbeacon.kbeaconlib.KBeaconsMgr;
 
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import no.nordicsemi.android.dfu.DfuProgressListener;
 import no.nordicsemi.android.dfu.DfuProgressListenerAdapter;
 import no.nordicsemi.android.dfu.DfuServiceController;
@@ -42,15 +45,15 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
     private boolean mInDfuState = false;
     private KBFirmwareDownload firmwareDownload;
     private DfuServiceController controller;
-    private TextView mUpdateStatus;
+    private TextView mUpdateStatusLabel, mUpdateNotesLabel, mNewVersionLabel;
     private ProgressBar mProgressBar;
     private KBeacon.ConnStateDelegate mPrivousDelegation;
     private DfuServiceInitiator starter;
     private ProgressDialog mProgressDialog;
     private KBeacon mBeacon;
 
-    private String mFirmwareFileName;
-    private String mFirmwareFileVersion;
+    private String mDestFirmwareFileName;
+    private boolean mFoundNewVersion = false;
 
 
     @Override
@@ -67,12 +70,14 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
         KBeaconsMgr mBluetoothMgr = KBeaconsMgr.sharedBeaconManager(this);
         mBeacon = mBluetoothMgr.getBeacon(mMacAddress);
 
-        mUpdateStatus = (TextView) findViewById(R.id.textStatusDescription);
+        mUpdateStatusLabel = (TextView) findViewById(R.id.textStatusDescription);
         mProgressBar = (ProgressBar)findViewById(R.id.progressBar);
+
+        mNewVersionLabel = (TextView) findViewById(R.id.releaseNotesTitle);
+        mUpdateNotesLabel = (TextView) findViewById(R.id.releaseNotes);
 
         mInDfuState = false;
         firmwareDownload = new KBFirmwareDownload(this);
-
 
         mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -82,7 +87,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
         mProgressDialog.show();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            DfuServiceInitiator.createDfuNotificationChannel(KBeaconDFUActivity.this);
+            DfuServiceInitiator.createDfuNotificationChannel(this);
         }
 
         this.downloadFirmwareInfo();
@@ -91,27 +96,27 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
     private final DfuProgressListener dfuProgressListener = new DfuProgressListenerAdapter() {
         @Override
         public void onDeviceConnecting(final String deviceAddress) {
-            mUpdateStatus.setText(R.string.dfu_status_connecting);
+            mUpdateStatusLabel.setText(R.string.dfu_status_connecting);
         }
 
         @Override
         public void onDfuProcessStarting(final String deviceAddress) {
-            mUpdateStatus.setText(R.string.dfu_status_starting);
+            mUpdateStatusLabel.setText(R.string.dfu_status_starting);
         }
 
         public void onDeviceConnected(@NonNull final String deviceAddress) {
             // empty default implementation
-            mUpdateStatus.setText(R.string.UPDATE_CONNECTED);
+            mUpdateStatusLabel.setText(R.string.UPDATE_CONNECTED);
         }
 
         public void onDeviceDisconnecting(@NonNull final String deviceAddress) {
             // empty default implementation
-            mUpdateStatus.setText(R.string.dfu_status_disconnecting);
+            mUpdateStatusLabel.setText(R.string.dfu_status_disconnecting);
         }
 
         public void onDeviceDisconned(@NonNull final String deviceAddress) {
             // empty default implementation
-            mUpdateStatus.setText(R.string.UPDATE_DISCONNECTED);
+            mUpdateStatusLabel.setText(R.string.UPDATE_DISCONNECTED);
         }
 
         @Override
@@ -119,13 +124,13 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
                                       final float speed, final float avgSpeed,
                                       final int currentPart, final int partsTotal) {
             mProgressBar.setProgress(percent);
-            mUpdateStatus.setText(R.string.UPDATE_UPLOADING);
+            mUpdateStatusLabel.setText(R.string.UPDATE_UPLOADING);
         }
 
         @Override
         public void onDfuCompleted(@NonNull final String deviceAddress) {
             // empty default implementation
-            mUpdateStatus.setText(R.string.UPDATE_COMPLETE);
+            mUpdateStatusLabel.setText(R.string.UPDATE_COMPLETE);
             mInDfuState = false;
             if (mProgressDialog.isShowing()){
                 mProgressDialog.dismiss();
@@ -136,7 +141,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
         @Override
         public void onDfuAborted(@NonNull final String deviceAddress) {
             // empty default implementation
-            mUpdateStatus.setText(R.string.UPDATE_ABORTED);
+            mUpdateStatusLabel.setText(R.string.UPDATE_ABORTED);
             mInDfuState = false;
             if (mProgressDialog.isShowing()){
                 mProgressDialog.dismiss();
@@ -148,7 +153,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
         public void onError(@NonNull final String deviceAddress,
                             final int error, final int errorType, final String message) {
             // empty default implementation
-            mUpdateStatus.setText(R.string.UPDATE_ABORTED);
+            mUpdateStatusLabel.setText(R.string.UPDATE_ABORTED);
             mInDfuState = false;
             if (mProgressDialog.isShowing()){
                 mProgressDialog.dismiss();
@@ -163,7 +168,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
             mProgressDialog.dismiss();
         }
 
-        new AlertDialog.Builder(KBeaconDFUActivity.this)
+        new AlertDialog.Builder(this)
                 .setTitle(R.string.DEVICE_DFU_TITLE)
                 .setMessage(strDesc)
                 .setPositiveButton(R.string.Dialog_OK, new DialogInterface.OnClickListener() {
@@ -201,46 +206,64 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
     }
 
 
+    private void updateFirmware() {
+        firmwareDownload.downLoadFile(mDestFirmwareFileName,
+                50 * 1000,
+                new KBFirmwareDownload.DownloadFirmwareDataCallback() {
+                    @Override
+                    public void onDownloadComplete(boolean bSuccess, File file, KBException error) {
+                        if (bSuccess) {
+                            mInDfuState = true;
+
+                            starter = new DfuServiceInitiator(KBeaconDFUActivity.this.mBeacon.getMac())
+                                    .setDeviceName(KBeaconDFUActivity.this.mBeacon.getName())
+                                    .setKeepBond(false);
+
+                            starter.setPrepareDataObjectDelay(300L);
+                            starter.setZip(null, file.getPath());
+
+                            controller = starter.start(KBeaconDFUActivity.this, DFUService.class);
+                        } else {
+                            if (mProgressDialog.isShowing()){
+                                mProgressDialog.dismiss();
+                            }
+
+                            mUpdateStatusLabel.setText(R.string.UPDATE_NETWORK_FAIL);
+                            dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL));
+                        }
+                    }
+                });
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_update, menu);
         return true;
     }
 
-    private void updateFirmware() {
-        firmwareDownload.downLoadFile(mFirmwareFileName,
-                50 * 1000,
-            new KBFirmwareDownload.DownloadFirmwareDataCallback() {
-                @Override
-                public void onDownloadComplete(boolean bSuccess, File file, KBException error) {
-                    if (bSuccess) {
-                        mInDfuState = true;
-
-                        starter = new DfuServiceInitiator(KBeaconDFUActivity.this.mBeacon.getMac())
-                                .setDeviceName(KBeaconDFUActivity.this.mBeacon.getName())
-                                .setKeepBond(false);
-                       
-                        starter.setPrepareDataObjectDelay(300L);
-                        starter.setZip(null, file.getPath());
-
-                        controller = starter.start(KBeaconDFUActivity.this, DFUService.class);
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_update:
+                if (!mInDfuState) {
+                    if (mFoundNewVersion) {
+                        makeSureUpdateSelection();
                     } else {
-                        if (mProgressDialog.isShowing()){
-                            mProgressDialog.dismiss();
-                        }
-
-                        mUpdateStatus.setText(R.string.UPDATE_NETWORK_FAIL);
-                        dfuComplete(getString(R.string.UPDATE_NETWORK_FAIL));
+                        toastShow(getString(R.string.UPDATE_NOT_FOUND_NEW_VERSION));
                     }
                 }
-            });
+                break;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
-    private void makeSureUpdateSelection() {
-        String strDesc = String.format(getString(R.string.DFU_FOUND_NEW_VERSION), mFirmwareFileVersion);
 
+    private void makeSureUpdateSelection( ) {
         new AlertDialog.Builder(KBeaconDFUActivity.this)
                 .setTitle(R.string.DEVICE_DFU_TITLE)
-                .setMessage(strDesc)
+                .setMessage(R.string.DFU_VERSION_MAKE_SURE)
                 .setPositiveButton(R.string.Dialog_OK, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -259,7 +282,6 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
                 .setNegativeButton(R.string.Dialog_Cancel, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        KBeaconDFUActivity.this.finish();
                     }
                 })
                 .show();
@@ -268,6 +290,7 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
 
     private void downloadFirmwareInfo() {
         mProgressDialog.show();
+        mUpdateNotesLabel.setText(R.string.DEVICE_CHECK_UPDATE);
 
         final KBCfgCommon cfgCommon = (KBCfgCommon) mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
         firmwareDownload.downloadFirmwareInfo(cfgCommon.getModel(), 10* 1000, new KBFirmwareDownload.DownloadFirmwareInfoCallback() {
@@ -284,31 +307,69 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
                         return;
                     }
 
-                    JSONObject object = (JSONObject)firmwareInfo.get(mBeacon.hardwareVersion());
-                    if (object == null){
+                    JSONArray firmwareVerList = (JSONArray)firmwareInfo.get(mBeacon.hardwareVersion());
+                    if (firmwareVerList == null){
                         dfuComplete(getString(R.string.NB_network_file_not_exist));
-                        return;
-                    }
-                    HashMap<String, Object> verInfo = new HashMap<>(10);
-                    KBCfgBase.JsonObject2HashMap(object, verInfo);
-                    mFirmwareFileName = (String)verInfo.get("appFileName");
-                    mFirmwareFileVersion = (String)verInfo.get("appVersion");
-                    if (mFirmwareFileName == null || mFirmwareFileVersion == null)
-                    {
-                        dfuComplete(getString(R.string.NB_network_cloud_server_error));
                         return;
                     }
 
                     String currVerDigital = cfgCommon.getVersion().substring(1);
-                    String remoteVerDigital = mFirmwareFileVersion.substring(1);
+                    StringBuilder versionNotes = new StringBuilder();
+                    for (int i = 0; i < firmwareVerList.length(); i++) {
+                        JSONObject object;
+                        try
+                        {
+                            object = (JSONObject)firmwareVerList.get(i);
+                        }
+                        catch (JSONException excpt)
+                        {
+                            excpt.printStackTrace();
+                            dfuComplete(getString(R.string.NB_network_cloud_server_error));
+                            return;
+                        }
 
-                    //check version
-                    if (Float.valueOf(currVerDigital) < Float.valueOf(remoteVerDigital)) {
-                        //disconnect for DFU
-                        makeSureUpdateSelection();
-                    } else {
-                        dfuComplete(getString(R.string.DEVICE_LATEST_VERSION));
+                        HashMap<String, Object> verInfo = new HashMap<>(10);
+                        KBCfgBase.JsonObject2HashMap(object, verInfo);
+                        String destVersion = (String) verInfo.get("appVersion");
+                        if (destVersion == null)
+                        {
+                            dfuComplete(getString(R.string.NB_network_cloud_server_error));
+                            return;
+                        }
+
+                        String remoteVerDigital = destVersion.substring(1);
+                        if (Float.valueOf(currVerDigital) < Float.valueOf(remoteVerDigital)) {
+
+                            String appFileName = (String) verInfo.get("appFileName");
+                            if (appFileName == null)
+                            {
+                                dfuComplete(getString(R.string.NB_network_cloud_server_error));
+                                return;
+                            }
+
+                            String releaseNotes = (String) verInfo.get("note");
+                            if (releaseNotes != null)
+                            {
+                                versionNotes.append(releaseNotes);
+                                versionNotes.append("\n");
+                            }
+
+                            if (i == firmwareVerList.length() - 1)
+                            {
+                                mDestFirmwareFileName = appFileName;
+
+                                //found new version
+                                mUpdateStatusLabel.setText(R.string.UPDATE_FOUND_NEW_VERSION);
+                                mNewVersionLabel.setText(destVersion);
+                                mUpdateNotesLabel.setText(versionNotes.toString());
+                                mFoundNewVersion = true;
+                                String strDesc = String.format(getString(R.string.DFU_FOUND_NEW_VERSION), destVersion);
+                                toastShow(strDesc);
+                                return;
+                            }
+                        }
                     }
+                    dfuComplete(getString(R.string.DEVICE_LATEST_VERSION));
                 }
                 else{
                     if (error.errorCode == KBFirmwareDownload.ERR_NETWORK_DOWN_FILE_ERROR)
@@ -324,3 +385,4 @@ public class KBeaconDFUActivity extends AppBaseActivity implements KBeacon.ConnS
         });
     }
 }
+

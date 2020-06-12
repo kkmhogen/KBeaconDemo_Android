@@ -50,7 +50,7 @@
     <string name="test_result_fail">WeakSignal</string>
     <string name="track_name">iTrack</string>
     <string name="track_mac_address">FF:FF:FF:FF:FF:FF</string>
-    <string name="track_state">Status</string>
+    <string name="track_state">Status:</string>
     <string name="title_activity_setting">Setting</string>
 
     <string name="track_setting_save">Save</string>
@@ -266,6 +266,12 @@
     <string name="UPDATE_NETWORK_FAIL">Network failure!</string>
     <string name="NB_network_cloud_server_error">Cloud server error</string>
     <string name="NB_network_file_not_exist">Cloud server file not exist</string>
-
+    <string name="UPDATE_FOUND_NEW_VERSION">found new version</string>
     <string name="kb_dfu_device">Dfu</string>
+    <string name="menu_firmware_update">Update</string>
+    <string name="UPDATE_RELEASE_NOTES">Release notes:</string>
+
+    <string name="UPDATE_NOT_FOUND_NEW_VERSION">Failed to obtain the latest version information, please ensure that the Internet connection is successful.</string>
+
+    <string name="DFU_VERSION_MAKE_SURE">To ensure a successful upgrade, it is recommended that the distance between the mobile phone and the KBeacon device be less than 3 meters. Are you sure you want to upgrade?</string>
 </resources>

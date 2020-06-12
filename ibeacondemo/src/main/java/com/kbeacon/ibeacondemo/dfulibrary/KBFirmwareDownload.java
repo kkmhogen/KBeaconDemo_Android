@@ -1,19 +1,15 @@
 package com.kbeacon.ibeacondemo.dfulibrary;
 
-
 import android.app.Activity;
 
 import com.kbeacon.ibeacondemo.Utils;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
 import com.kbeacon.kbeaconlib.KBException;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -29,7 +25,7 @@ public class KBFirmwareDownload {
     }
 
     private final static String DEFAULT_DOWN_DIRECTORY_NAME = "KBeaconFirmware";
-    private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://api.ieasygroup.com:8092/KBeacon/";
+    private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://api.ieasygroup.com:8092/KBeaconFirmware/";
 
     public final static int ERR_NETWORK_DOWN_FILE_ERROR = 0x1001;
     public final static int ERR_CREATE_DIRECTORY_FAIL = 0x1002;
@@ -78,7 +74,7 @@ public class KBFirmwareDownload {
                 final KBException downResult;
                 HashMap<String, Object> jsonPara;
                 if (bSuccess) {
-                    String strJsonFile = ReadTxtFile(file);
+                    String strJsonFile = Utils.ReadTxtFile(file);
                     jsonPara = new HashMap<>(10);
                     if (strJsonFile != null) {
                         KBCfgBase.JsonString2HashMap(strJsonFile, jsonPara);
@@ -164,32 +160,5 @@ public class KBFirmwareDownload {
                 });
             }
         }).start();
-    }
-
-    public static String ReadTxtFile(File file)
-    {
-        StringBuilder content = new StringBuilder();
-
-        try {
-            InputStream instream = new FileInputStream(file);
-            InputStreamReader inputreader = new InputStreamReader(instream);
-            BufferedReader buffreader = new BufferedReader(inputreader);
-            String line;
-            //分行读取
-            while (( line = buffreader.readLine()) != null) {
-                content.append(line);
-            }
-            instream.close();
-        }
-        catch (java.io.FileNotFoundException e)
-        {
-            return null;
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
-
-        return content.toString();
     }
 }
