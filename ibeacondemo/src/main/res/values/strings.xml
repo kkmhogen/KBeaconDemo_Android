@@ -274,4 +274,6 @@
     <string name="UPDATE_NOT_FOUND_NEW_VERSION">Failed to obtain the latest version information, please ensure that the Internet connection is successful.</string>
 
     <string name="DFU_VERSION_MAKE_SURE">To ensure a successful upgrade, it is recommended that the distance between the mobile phone and the KBeacon device be less than 3 meters. Are you sure you want to upgrade?</string>
+
+    <string name="update_ibeacon_2_tlm">iBeacon2TLM</string>
 </resources>

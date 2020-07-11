@@ -365,6 +365,13 @@
                     android:layout_height="50dp"
                     android:text="@string/kb_dfu_device" />
 
+                <Button
+                    android:id="@+id/beacon2TLM"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/update_ibeacon_2_tlm" />
+
+
 
             </LinearLayout>
 

@@ -89,6 +89,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mTriggerButton = (Button) findViewById(R.id.enableBtnTrigger);
         mTriggerButton.setOnClickListener(this);
         findViewById(R.id.dfuDevice).setOnClickListener(this);
+        findViewById(R.id.beacon2TLM).setOnClickListener(this);
     }
 
     @Override
@@ -147,6 +148,9 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 enableButtonTrigger();
                 break;
 
+            case R.id.beacon2TLM:
+                updateKBeaconToIBeaconAndTLM();
+                break;
 
             default:
                 break;
@@ -500,6 +504,55 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
     }
 
+    //example: update KBeacon to hybrid iBeacon/EddyTLM
+    //sometimes we need KBeacon broadcasting both iBeacon and TLM packet (battery level, Temperature, power on times
+    void updateKBeaconToIBeaconAndTLM()
+    {
+        if (!mBeacon.isConnected())
+        {
+            return;
+        }
+
+        KBCfgCommon newCommomCfg = new KBCfgCommon();
+        KBCfgIBeacon newBeaconCfg = new KBCfgIBeacon();
+
+        try {
+            //update
+            newCommomCfg.setAdvType(KBAdvType.KBAdvTypeIBeacon | KBAdvType.KBAdvTypeEddyTLM);
+
+            //adv period and TLM interval
+            newCommomCfg.setAdvPeriod(1000f);
+            newCommomCfg.setTLMAdvInterval(8);
+
+            //iBeacon data
+            newBeaconCfg.setUuid("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0");
+            newBeaconCfg.setMajorID(6545);
+            newBeaconCfg.setMinorID(1458);
+
+            ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+            cfgList.add(newCommomCfg);
+            cfgList.add(newBeaconCfg);
+            mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+                @Override
+                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                    if (bConfigSuccess)
+                    {
+                        toastShow("config data to beacon success");
+                    }
+                    else
+                    {
+                        toastShow("config failed for error:" + error.errorCode);
+                    }
+                }
+            });
+        }catch (Exception excpt)
+        {
+            toastShow("config data is invalid");
+            excpt.printStackTrace();
+        }
+    }
+
+    //example, update common para
     public void updateBeaconCommonPara() {
         if (!mBeacon.isConnected()) {
             return;
@@ -549,6 +602,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+    //example: update iBeacon para
     public void updateIBeaconPara()
     {
         if (!mBeacon.isConnected()) {
