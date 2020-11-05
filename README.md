@@ -37,27 +37,16 @@ Android Studio
 minSdkVersion 21
 
 ### 3.2 Import SDK
-1. Copy the development kit kbeaconlib-release-xx.aar file into the libs directory. As shown below:  
-![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/bundlesnapshot.png?raw=true)
+1. The kbeaconlib library may be found on jcenter repository. Add it to your project by adding the following dependency in your build.gradle:
 
-2. Add dependencies in build.gradle, Edit "build.gradle" file under the APP project  
-a. Add follow line in build.gradle:  
-```
-repositories {
-    flatDir {
-        dirs 'libs'   // aar lib directory
-    }
-}
-```
-b. add kbeaconlib to dependencies
 ```
 dependencies {
    …
-    compile(name:'kbeaconlib-release-v1.0.1', ext:'aar')
+   implementation 'com.kbeacon:kbeaconlib:1.0.1'
 }
 ```
 
-3. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:  
+2. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:  
 ```
 <uses-feature
     android:name="android.hardware.bluetooth_le" android:required="true" />

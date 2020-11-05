@@ -21,14 +21,8 @@ android {
     }
 }
 
-repositories {
-    flatDir {
-        dirs 'libs'   // aar目录
-    }
-}
-
 dependencies {
     implementation 'com.android.support:support-v4:29.2.0'
     implementation 'com.android.support:appcompat-v7:29.2.0'
-    implementation(name:'kbeaconlib-release-v1.09', ext:'aar')
+    implementation 'com.kbeacon:kbeaconlib:1.0.1'
 }
