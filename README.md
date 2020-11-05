@@ -2,9 +2,6 @@
 
 ----
 ## 1. Introduction
-We provide AAR format SDK library on Github, you can found it in directory:   
-./aar-sdk/kbeaconlib-release-xxx.aar
-
 With this SDK, you can scan and configure the KBeacon device. The SDK include follow main class:
 * KBeaconsMgr: Global definition, responsible for scanning KBeacon devices advertisment packet, and monitoring the Bluetooth status of the system;  
 
@@ -29,25 +26,23 @@ To make your development easier, we have two android demos in github. They are:
 * eddystonedemo: The app can scan KBeacon devices and configure Eddystone URL, TLM, UID related parameters. This SDK are introduced with reference to this demo.
 * ibeacondemo: The app can scan KBeacon devices and configure iBeacon related parameters.
 
-
 ## 3. Import SDK to project
-### 3.1 Prepare
 Development environment:  
 Android Studio  
 minSdkVersion 21
 
-### 3.2 Import SDK
 1. The kbeaconlib library may be found on jcenter repository. Add it to your project by adding the following dependency in your build.gradle:
 
-```
+```Java
 dependencies {
    …
    implementation 'com.kbeacon:kbeaconlib:1.0.1'
 }
 ```
 
-2. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:  
-```
+2. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:
+
+```Java
 <uses-feature
     android:name="android.hardware.bluetooth_le" android:required="true" />
 <uses-permission android:name="android.permission.BLUETOOTH"/>
@@ -55,16 +50,18 @@ dependencies {
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 ```  
-For android 10, if you want the app scanning KBeacons in background, please add:  
-```
+
+For android version > 10, if you want the app scanning KBeacons in background, please add:  
+
+```Java
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
 ```
 
-
 ## 4. How to use SDK
 ### 4.1 Scanning device
 1. Init KBeaconMgr instance in Activity, also your application should implementation the scanning callback.
+
 ```Java
 @Override
 public void onCreate(Bundle savedInstanceState) {
