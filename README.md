@@ -22,9 +22,9 @@ After a KBeacon connected, developer can make some changes of the device by modi
 
 
 ## 2. Android demo
-To make your development easier, we have two android demos in github. They are:  
-* eddystonedemo: The app can scan KBeacon devices and configure Eddystone URL, TLM, UID related parameters. This SDK are introduced with reference to this demo.
-* ibeacondemo: The app can scan KBeacon devices and configure iBeacon related parameters.
+There are 3 projects in this SDK, if you plan to use KBeacon for iBeacon related applications. I suggest you develop based on iBeacondemo.  
+If your application is based on the Eddystone protocol, I suggest you start from eddystonedemo.  
+If you are using KBeacon for sensors, such as temperature, humidity, and motion monitoring, please start from sensordemo.
 
 ## 3. Import SDK to project
 Development environment:  
@@ -59,10 +59,6 @@ For android version > 10, if you want the app scanning KBeacons in background, p
 ```
 
 ## 4. How to use SDK
-There are 3 projects in the SDK, if you plan to use KBeacon for iBeacon related applications. I suggest you develop based on iBeacondemo.  
-If your application is based on the Eddystone protocol, I suggest you start from eddystonedemo.  
-If you are using KBeacon for sensors, such as temperature, humidity, and motion monitoring, please start base on sensordemo.
-
 ### 4.1 Scanning device
 1. Init KBeaconMgr instance in Activity, also your application should implementation the scanning callback.
 
@@ -1456,6 +1452,7 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
+* 2020.11.11 v1.30 Support temperature and humidity sensor. Remove AAR library, please download library from JCenter.
 * 2020.3.1 v1.23 change the adv period type from integer to float.
 * 2020.1.16 v1.22 add button trigger.
 * 2019.12.16 v1.21 add android10 permission.
