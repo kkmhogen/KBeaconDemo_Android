@@ -39,7 +39,7 @@ dependencies {
    implementation 'com.kbeacon:kbeaconlib:1.0.4'
 }
 ```
-The kbeaconlib is open source code, it was in demo directory. You can also modify the source code and import it to your project.
+
 2. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:
 
 ```Java
