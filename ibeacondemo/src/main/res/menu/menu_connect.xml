@@ -1,10 +1,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.kbeacon.ibeacondemo.SettingActivity">
+    tools:context="com.kbeacon.sensordemo.SettingActivity">
 
     <item android:id="@+id/menu_connecting"
         android:orderInCategory="100"
+        android:title=""
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/menu_connect"

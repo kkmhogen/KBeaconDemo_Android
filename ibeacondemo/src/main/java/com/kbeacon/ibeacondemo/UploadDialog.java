@@ -7,6 +7,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.kbeacon.ibeacondemo.R;
+
 /**
  * Created by qindachang on 2017/3/10.
  */

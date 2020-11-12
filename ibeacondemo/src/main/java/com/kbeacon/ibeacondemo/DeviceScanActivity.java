@@ -18,7 +18,6 @@ package com.kbeacon.ibeacondemo;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,6 +30,7 @@ import android.widget.ListView;
 
 import com.kbeacon.kbeaconlib.KBeacon;
 import com.kbeacon.kbeaconlib.KBeaconsMgr;
+import com.kbeacon.ibeacondemo.R;
 
 import java.util.HashMap;
 
@@ -95,7 +95,7 @@ public class DeviceScanActivity extends AppBaseActivity implements AdapterView.O
             return;
         }
         mBeaconsMgr.delegate = this;
-        mBeaconsMgr.setScanMinRssiFilter(-60);
+        mBeaconsMgr.setScanMinRssiFilter(-80);
         mBeaconsMgr.setScanMode(KBeaconsMgr.SCAN_MODE_LOW_LATENCY);
 
         mListView = (ListView) findViewById(R.id.listview);

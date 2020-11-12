@@ -13,12 +13,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.kbeacon.ibeacondemo.dfulibrary.KBeaconDFUActivity;
-import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvPacketEddyUID;
 import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgEddyUID;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgEddyURL;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgIBeacon;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgTrigger;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
@@ -26,6 +23,7 @@ import com.kbeacon.kbeaconlib.KBConnectionEvent;
 import com.kbeacon.kbeaconlib.KBException;
 import com.kbeacon.kbeaconlib.KBeacon;
 import com.kbeacon.kbeaconlib.KBeaconsMgr;
+import com.kbeacon.ibeacondemo.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +49,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     private EditText mEditBeaconPassword;
     private EditText mEditBeaconTxPower;
     private EditText mEditBeaconName;
-    private Button mDownloadButton, mRingButton, mTriggerButton;
+    private Button mDownloadButton, mTriggerButton, mResetButton;
     private String mNewPassword;
     SharePreferenceMgr mPref;
 
@@ -84,10 +82,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mDownloadButton.setEnabled(false);
         mDownloadButton.setOnClickListener(this);
 
-        mRingButton = (Button) findViewById(R.id.ringDevice);
-        mRingButton.setOnClickListener(this);
-        mTriggerButton = (Button) findViewById(R.id.enableBtnTrigger);
-        mTriggerButton.setOnClickListener(this);
+        mResetButton = (Button) findViewById(R.id.resetConfigruation);
+        mResetButton.setOnClickListener(this);
         findViewById(R.id.dfuDevice).setOnClickListener(this);
         findViewById(R.id.beacon2TLM).setOnClickListener(this);
     }
@@ -140,9 +136,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 updateViewToDevice();
                 break;
 
-            case R.id.ringDevice:
-                ringDevice();
-                break;
 
             case R.id.enableBtnTrigger:
                 enableButtonTrigger();
@@ -152,10 +145,14 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 updateKBeaconToIBeaconAndTLM();
                 break;
 
+            case R.id.resetConfigruation:
+                resetParameters();
+                break;
             default:
                 break;
         }
     }
+
 
     public void enableButtonTrigger() {
         if (!mBeacon.isConnected()) {
@@ -316,42 +313,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
-    //ring device
-    public void ringDevice() {
-        if (!mBeacon.isConnected()) {
-            return;
-        }
-
-        KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
-        if (!cfgCommon.isSupportBeep())
-        {
-            toastShow("device does not support ring feature");
-            return;
-        }
-
-        mDownloadButton.setEnabled(false);
-        HashMap<String, Object> cmdPara = new HashMap<>(5);
-        cmdPara.put("msg", "ring");
-        cmdPara.put("ringTime", 20000);   //ring times, uint is ms
-        cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
-        cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
-        cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
-        mRingButton.setEnabled(false);
-        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
-            @Override
-            public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mRingButton.setEnabled(true);
-                if (bConfigSuccess)
-                {
-                    toastShow("send command to beacon success");
-                }
-                else
-                {
-                    toastShow("send command to beacon error:" + error.errorCode);
-                }
-            }
-        });
-    }
 
     void updateViewToDevice()
     {
@@ -653,11 +614,11 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mDownloadButton.setEnabled(false);
         HashMap<String, Object> cmdPara = new HashMap<>(5);
         cmdPara.put("msg", "reset");
-        mRingButton.setEnabled(false);
+        mResetButton.setEnabled(false);
         mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
             @Override
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mRingButton.setEnabled(true);
+                mResetButton.setEnabled(true);
                 if (bConfigSuccess)
                 {
                     //disconnect with device to make sure the new parameters take effect

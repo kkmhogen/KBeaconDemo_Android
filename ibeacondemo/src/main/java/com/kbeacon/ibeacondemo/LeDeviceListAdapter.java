@@ -11,6 +11,7 @@ import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvPacketEddyTLM;
 import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvPacketIBeacon;
 import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
 import com.kbeacon.kbeaconlib.KBeacon;
+import com.kbeacon.ibeacondemo.R;
 
 
 public class LeDeviceListAdapter extends BaseAdapter {
@@ -124,10 +125,6 @@ public class LeDeviceListAdapter extends BaseAdapter {
 		{
 			String strTemputure = mContext.getString(R.string.BEACON_TEMP) + tlmBeacon.getTemperature();
 			viewHolder.deviceTempeture.setText(strTemputure);
-
-			//battery level
-			String strBatteryLvl = mContext.getString(R.string.BEACON_BATTERY) + tlmBeacon.getBatteryLevel();
-			viewHolder.deviceBattery.setText(strBatteryLvl);
 		}
 
 		return view;

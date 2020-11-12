@@ -1,0 +1,940 @@
+package com.kbeacon.sensordemo;
+
+import android.app.AlertDialog;
+import android.bluetooth.BluetoothClass;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.kbeacon.kbeaconlib.KBConnPara;
+import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBHumidityNotifyData;
+import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyDataBase;
+import com.kbeacon.kbeaconlib.UTCTime;
+import com.kbeacon.sensordemo.dfulibrary.KBeaconDFUActivity;
+import com.kbeacon.sensordemo.recordhistory.CfgHTBeaconHistoryActivity;
+import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgHumidityTrigger;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgSensor;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgTrigger;
+import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
+import com.kbeacon.kbeaconlib.KBConnectionEvent;
+import com.kbeacon.kbeaconlib.KBException;
+import com.kbeacon.kbeaconlib.KBeacon;
+import com.kbeacon.kbeaconlib.KBeaconsMgr;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener, KBeacon.ConnStateDelegate, KBeacon.NotifyDataDelegate{
+
+    public final static String DEVICE_MAC_ADDRESS = "DEVICE_MAC_ADDRESS";
+    private final static String LOG_TAG = "DevicePannel";
+
+    public final static String DEFAULT_PASSWORD = "0000000000000000";   //16 zero ascii
+    private static SimpleDateFormat mUtcTimeFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");// 日志文件格式
+
+    private KBeaconsMgr mBeaconMgr;
+    private String mDeviceAddress;
+    private KBeacon mBeacon;
+
+    //uiview
+    private TextView mBeaconType, mBeaconStatus;
+    private TextView mBeaconModel;
+    private Button nEnableTHData2Adv, nEnableTHData2App, mViewTHDataHistory;
+    private Button nEnableTHTrigger2Adv, nEnableTHTrigger2App;
+    private Button mRingButton, nEnableAccSensor, nEnableAccTrigger, mTriggerButton;
+    private String mNewPassword;
+    SharePreferenceMgr mPref;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        final Intent intent = getIntent();
+        mDeviceAddress = intent.getStringExtra(DEVICE_MAC_ADDRESS);
+        mBeaconMgr = KBeaconsMgr.sharedBeaconManager(this);
+        mBeacon = mBeaconMgr.getBeacon(mDeviceAddress);
+        if (mBeacon == null){
+            toastShow("device is not exist");
+            finish();
+        }
+
+        mPref = SharePreferenceMgr.shareInstance(this);
+        setContentView(R.layout.device_pannel);
+        mBeaconStatus = (TextView)findViewById(R.id.connection_states);
+        mBeaconType = (TextView) findViewById(R.id.beaconType);
+        mBeaconModel = (TextView) findViewById(R.id.beaconModle);
+
+        //send temperature and humidity in advertisement
+        nEnableTHData2Adv = (Button) findViewById(R.id.enableTHDataToAdv);
+        nEnableTHData2Adv.setOnClickListener(this);
+
+        //send temperature humidity data to app
+        nEnableTHData2App = findViewById(R.id.enableTHDataToApp);
+        nEnableTHData2App.setOnClickListener(this);
+
+        //view temperature and humidity data history
+        mViewTHDataHistory = findViewById(R.id.viewTHDataHistory);
+        mViewTHDataHistory.setOnClickListener(this);
+
+        //report trigger to adv
+        nEnableTHTrigger2Adv = findViewById(R.id.enableTHChangeTriggerEvtRpt2Adv);
+        nEnableTHTrigger2Adv.setOnClickListener(this);
+
+        //enable humidity data report only changed
+        nEnableTHTrigger2App = findViewById(R.id.enableTHChangeTriggerEvtRpt2App);
+        nEnableTHTrigger2App.setOnClickListener(this);
+
+        //enable acc
+        nEnableAccSensor = findViewById(R.id.enableAccAdvertisement);
+        nEnableAccSensor.setOnClickListener(this);
+
+        nEnableAccTrigger = findViewById(R.id.enableAccTrigger);
+        nEnableAccTrigger.setOnClickListener(this);
+
+        mRingButton = (Button) findViewById(R.id.ringDevice);
+        mRingButton.setOnClickListener(this);
+
+        mTriggerButton = (Button) findViewById(R.id.enableBtnTrigger);
+        mTriggerButton.setOnClickListener(this);
+
+        findViewById(R.id.dfuDevice).setOnClickListener(this);
+        findViewById(R.id.readBtnTriggerPara).setOnClickListener(this);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_connect, menu);
+        if (mBeacon.getState() == KBeacon.KBStateConnected)
+        {
+            menu.findItem(R.id.menu_connect).setEnabled(true);
+            menu.findItem(R.id.menu_connect).setVisible(false);
+            menu.findItem(R.id.menu_disconnect).setVisible(true);
+            menu.findItem(R.id.menu_connecting).setVisible(false);
+            menu.findItem(R.id.menu_connecting).setActionView(null);
+            mBeaconStatus.setText("Connected");
+        }
+        else if (mBeacon.getState() == KBeacon.KBStateConnecting)
+        {
+            mBeaconStatus.setText("Connecting");
+            menu.findItem(R.id.menu_connect).setEnabled(false);
+            menu.findItem(R.id.menu_disconnect).setVisible(false);
+            menu.findItem(R.id.menu_connecting).setActionView(
+                    R.layout.actionbar_indeterminate_progress);
+        }
+        else
+        {
+            mBeaconStatus.setText("Disconnected");
+            menu.findItem(R.id.menu_connect).setEnabled(true);
+            menu.findItem(R.id.menu_connect).setVisible(true);
+            menu.findItem(R.id.menu_disconnect).setVisible(false);
+            menu.findItem(R.id.menu_connecting).setVisible(false);
+            menu.findItem(R.id.menu_connecting).setActionView(null);
+        }
+        return true;
+    }
+
+    @Override
+    public void onClick(View v)
+    {
+        switch (v.getId()) {
+
+            case R.id.enableAccAdvertisement:
+                enableAdvTypeIncludeAccXYZ();
+                break;
+
+            case R.id.enableAccTrigger:
+                enableMotionTrigger();
+                break;
+
+            case R.id.enableTHDataToAdv:
+                enableTHRealtimeDataToAdv();
+                break;
+
+            case R.id.enableTHDataToApp:
+                enableTHRealtimeDataToApp();
+                break;
+
+            case R.id.viewTHDataHistory:
+                if (mBeacon.isConnected()) {
+                    Intent intent = new Intent(this, CfgHTBeaconHistoryActivity.class);
+                    intent.putExtra(CfgHTBeaconHistoryActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());   //field type
+                    startActivityForResult(intent, 1);
+                }
+                break;
+
+            case R.id.enableBtnTrigger:
+                enableButtonTrigger();
+                break;
+
+            case R.id.readBtnTriggerPara:
+                readButtonTriggerPara();
+                break;
+
+            case R.id.enableTHChangeTriggerEvtRpt2Adv:
+                enableTHChangeTriggerEvtRpt2Adv();
+                break;
+
+
+            case R.id.enableTHChangeTriggerEvtRpt2App:
+                enableTHChangeTriggerEvtRpt2App();
+                break;
+
+            case R.id.dfuDevice:
+                if (mBeacon.isConnected()) {
+                    final Intent intent = new Intent(this, KBeaconDFUActivity.class);
+                    intent.putExtra(KBeaconDFUActivity.DEVICE_MAC_ADDRESS, mBeacon.getMac());
+                    startActivityForResult(intent, 1);
+                }
+                break;
+
+            case R.id.ringDevice:
+                ringDevice();
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void onNotifyDataReceived(KBeacon beacon, int nDataType, KBNotifyDataBase sensorData)
+    {
+        KBHumidityNotifyData notifyData = (KBHumidityNotifyData)sensorData;
+
+        float humidity = notifyData.getHumidity();
+        float temperature = notifyData.getTemperature();
+        long nEventTime = notifyData.getEventUTCTime();
+
+        String strEvtUtcTime;
+        strEvtUtcTime = mUtcTimeFmt.format(nEventTime * 1000);
+        String strLogInfo = getString(R.string.RECEIVE_NOTIFY_DATA, strEvtUtcTime, temperature, humidity);
+        Log.v(LOG_TAG, strLogInfo);
+    }
+
+    //Please make sure the app does not enable any trigger's advertisement mode to KBTriggerAdvOnlyMode
+    //If the app set some trigger advertisement mode to KBTriggerAdvOnlyMode, then the device only start advertisement when trigger event happened.
+    //when this function enabled, then the device will include the realtime temperature and humidity data in advertisement
+    public void enableTHRealtimeDataToAdv()
+    {
+        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        final KBCfgSensor oldSensorCfg = (KBCfgSensor)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeSensor);
+
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        if (!oldCommonCfg.isSupportHumiditySensor())
+        {
+            return;
+        }
+
+        try {
+            //disable temperature trigger, if you enable other trigger, for example, motion trigger, button trigger, please set the trigger adv mode to always adv mode
+            //or disable that trigger
+            KBCfgHumidityTrigger thTriggerPara = new KBCfgHumidityTrigger();
+            thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+
+            nEnableTHData2Adv.setEnabled(false);
+            this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
+                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+
+                    //enable ksensor advertisement
+                    try {
+                        ArrayList<KBCfgBase> newCfg = new ArrayList<>(2);
+                        if ((oldCommonCfg.getAdvType() & KBAdvType.KBAdvTypeSensor) == 0) {
+                            KBCfgCommon newCommonCfg = new KBCfgCommon();
+                            newCommonCfg.setAdvType(KBAdvType.KBAdvTypeSensor);
+                            newCfg.add(newCommonCfg);
+                        }
+
+                        //enable temperature and humidity
+                        Integer nOldSensorType = oldSensorCfg.getSensorType();
+                        if ((nOldSensorType & KBCfgSensor.KBSensorTypeHumidity) == 0) {
+                            KBCfgSensor sensorCfg = new KBCfgSensor();
+                            sensorCfg.setSensorType(KBCfgSensor.KBSensorTypeHumidity | nOldSensorType);
+                            newCfg.add(sensorCfg);
+                        }
+
+                        mBeacon.modifyConfig(newCfg, new KBeacon.ActionCallback() {
+                            @Override
+                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                nEnableTHData2Adv.setEnabled(true);
+                                if (bConfigSuccess) {
+                                    Log.v(LOG_TAG, "enable humidity advertisement success");
+                                }
+                            }
+                        });
+                    }
+                    catch (Exception excpt)
+                    {
+                        excpt.printStackTrace();
+                    }
+                }
+            });
+        }
+        catch (Exception excpt)
+        {
+            Log.v(LOG_TAG, "config humidity advertisement failed");
+        }
+    }
+
+    //please make sure the app does not enable temperature&humidity trigger
+    //If the app enable the trigger, the device only report the sensor data to app when trigger event happened.
+    //After enable realtime data to app, then the device will periodically send the temperature and humidity data to app whether it was changed or not.
+    public void enableTHRealtimeDataToApp(){
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeHumidity) == 0) {
+            Log.e(LOG_TAG, "device does not support humidity trigger");
+            return;
+        }
+
+        //turn off trigger
+        try {
+            //make sure the trigger was turn off
+            KBCfgHumidityTrigger thTriggerPara = new KBCfgHumidityTrigger();
+            thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+
+            //subscribe humidity notify
+            nEnableTHData2App.setEnabled(false);
+            this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
+                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                    nEnableTHData2App.setEnabled(true);
+                    if (bConfigSuccess) {
+                        Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
+
+                        if (!mBeacon.isSensorDataSubscribe(KBHumidityNotifyData.class)) {
+                            mBeacon.subscribeSensorDataNotify(KBHumidityNotifyData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                                @Override
+                                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                    if (bConfigSuccess) {
+                                        Log.v(LOG_TAG, "subscribe temperature and humidity data success");
+                                    } else {
+                                        Log.v(LOG_TAG, "subscribe temperature and humidity data failed");
+                                    }
+                                }
+                            });
+                        }
+
+                    } else {
+                        toastShow("enable temp&humidity error:" + error.errorCode);
+                    }
+                }
+            });
+        }catch (Exception excpt)
+        {
+            toastShow("config data is invalid");
+            excpt.printStackTrace();
+        }
+    }
+
+    //The device will start broadcasting when temperature&humidity trigger event happened
+    //for example, the humidity > 70% or temperature < 10 or temperature > 50
+    public void enableTHChangeTriggerEvtRpt2Adv() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeHumidity) == 0) {
+            Log.e(LOG_TAG, "device does not support humidity trigger");
+            return;
+        }
+
+        KBCfgHumidityTrigger thTriggerPara = new KBCfgHumidityTrigger();
+
+        try {
+            //set trigger type
+            thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
+
+            //set trigger advertisement enable
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAdv);
+
+            //set trigger adv mode to adv only on trigger
+            thTriggerPara.setTriggerAdvMode(KBCfgTrigger.KBTriggerAdvOnlyMode);
+
+            //set trigger condition
+            thTriggerPara.setTriggerHtParaMask(KBCfgHumidityTrigger.KBTriggerHTParaMaskTemperatureAbove
+                    | KBCfgHumidityTrigger.KBTriggerHTParaMaskTemperatureBelow
+                    | KBCfgHumidityTrigger.KBTriggerHTParaMaskHumidityAbove);
+            thTriggerPara.setTriggerTemperatureAbove(50);
+            thTriggerPara.setTriggerTemperatureBelow(-10);
+            thTriggerPara.setTriggerHumidityAbove(70);
+
+            //set trigger adv type
+            thTriggerPara.setTriggerAdvType(KBAdvType.KBAdvTypeSensor);
+
+            //set trigger adv duration to 20 seconds
+            thTriggerPara.setTriggerAdvTime(20);
+
+            //set the trigger adv interval to 500ms
+            thTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        nEnableTHTrigger2Adv.setEnabled(false);
+        this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                nEnableTHTrigger2Adv.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable temp&humidity trigger success");
+                } else {
+                    toastShow("enable temp&humidity error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //the device will send event to app when temperature&humidity trigger event happened
+    //for example, the humidity > 50%
+    //the app must subscribe the notification event if it want receive the event
+    public void enableTHChangeTriggerEvtRpt2App(){
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeHumidity) == 0) {
+            Log.e(LOG_TAG, "device does not support humidity trigger");
+            return;
+        }
+
+
+        try {
+            KBCfgHumidityTrigger thTriggerPara = new KBCfgHumidityTrigger();
+
+            //set trigger type
+            thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
+
+            //set trigger event that report to app
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
+
+            //set trigger condition
+            thTriggerPara.setTriggerHtParaMask(KBCfgHumidityTrigger.KBTriggerHTParaMaskHumidityAbove);
+            thTriggerPara.setTriggerHumidityAbove(70);
+
+            nEnableTHTrigger2App.setEnabled(false);
+            this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
+                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                    nEnableTHTrigger2App.setEnabled(true);
+                    if (bConfigSuccess) {
+                        toastShow("enable temp&humidity trigger success");
+
+                        //subscribe humidity notify
+                        if (!mBeacon.isSensorDataSubscribe(KBHumidityNotifyData.class)) {
+                            mBeacon.subscribeSensorDataNotify(KBHumidityNotifyData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                                @Override
+                                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                    if (bConfigSuccess) {
+                                        Log.v(LOG_TAG, "subscribe temperature and humidity data success");
+                                    } else {
+                                        Log.v(LOG_TAG, "subscribe temperature and humidity data failed");
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        toastShow("enable temp&humidity error:" + error.errorCode);
+                    }
+                }
+            });
+        }catch (Exception excpt)
+        {
+            toastShow("config data is invalid");
+            excpt.printStackTrace();
+        }
+    }
+
+
+
+    //The device will start broadcasting when motion trigger event happened
+    public void enableMotionTrigger() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeMotion) == 0) {
+            toastShow("Device does not supported motion sensor");
+            return;
+        }
+
+        KBCfgTrigger mtionTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            mtionTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeMotion);
+
+            //set trigger advertisement enable
+            mtionTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAdv);
+
+            //set trigger adv mode to adv only on trigger
+            mtionTriggerPara.setTriggerAdvMode(KBCfgTrigger.KBTriggerAdvOnlyMode);
+
+            //set motion detection sensitive
+            mtionTriggerPara.setTriggerPara(10);
+
+            //set trigger adv type
+            mtionTriggerPara.setTriggerAdvType(KBAdvType.KBAdvTypeSensor);
+
+            //set trigger adv duration to 20 seconds
+            mtionTriggerPara.setTriggerAdvTime(20);
+
+            //set the trigger adv interval to 500ms
+            mtionTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        nEnableAccTrigger.setEnabled(false);
+        this.mBeacon.modifyTrigger(mtionTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                nEnableAccTrigger.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+
+    public void enableButtonTrigger() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            toastShow("Device does not supported button sensor");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger advertisement enable
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAdv);
+
+            //set trigger adv mode to trigger adv only mode, if you want the kbeacon always advertisement,
+            //please set the adv mode to KBTriggerAdv2AliveMode
+            btnTriggerPara.setTriggerAdvMode(KBCfgTrigger.KBTriggerAdvOnlyMode);
+
+            //set trigger button para, enable single click and double click
+            btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
+
+            //set trigger adv type
+            btnTriggerPara.setTriggerAdvType(KBAdvType.KBAdvTypeIBeacon);
+
+            //set trigger adv duration to 20 seconds
+            btnTriggerPara.setTriggerAdvTime(20);
+
+            //set the trigger adv interval to 500ms
+            btnTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mTriggerButton.setEnabled(false);
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mTriggerButton.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void disableButtonTrigger() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            toastShow( "device does not support push button trigger");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger advertisement enable
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+        } catch (KBException excpt) {
+            Log.e(LOG_TAG, "Input paramaters invalid");
+            return;
+        }
+
+        //disable push button trigger
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess) {
+                    toastShow("disable push button trigger success");
+                } else {
+                    toastShow("disable push button trigger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void readButtonTriggerPara() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            toastShow("device does not support push button trigger");
+            return;
+        }
+
+        //enable push button trigger
+        this.mBeacon.readTriggerConfig(KBCfgTrigger.KBTriggerTypeButton, new KBeacon.ReadConfigCallback() {
+            public void onReadComplete(boolean bConfigSuccess, HashMap<String, Object> paraDicts, KBException error) {
+                if (bConfigSuccess) {
+                    ArrayList<KBCfgTrigger> btnTriggerCfg = (ArrayList<KBCfgTrigger>)paraDicts.get("trObj");
+                    if (btnTriggerCfg != null)
+                    {
+                        KBCfgTrigger btnCfg = btnTriggerCfg.get(0);
+
+                        Log.v(LOG_TAG, "read trigger type:" + btnCfg.getTriggerType());
+                        if (btnCfg.getTriggerAction() > 0)
+                        {
+                            //button enable mask
+                            Integer triggerPara = btnCfg.getTriggerPara();
+                            if (triggerPara != null) {
+                                if ((triggerPara & KBCfgTrigger.KBTriggerBtnSingleClick) > 0) {
+                                    Log.v(LOG_TAG, "Enable single click trigger");
+                                }
+                                if ((triggerPara & KBCfgTrigger.KBTriggerBtnDoubleClick) > 0) {
+                                    Log.v(LOG_TAG, "Enable double click trigger");
+                                }
+                                if ((triggerPara & KBCfgTrigger.KBTriggerBtnHold) > 0) {
+                                    Log.v(LOG_TAG, "Enable hold press trigger");
+                                }
+                            }
+
+                            //button trigger adv mode
+                            if (btnCfg.getTriggerAdvMode()== KBCfgTrigger.KBTriggerAdvOnlyMode)
+                            {
+                                Log.v(LOG_TAG, "device only advertisement when trigger event happened");
+                            }
+                            else if (btnCfg.getTriggerAdvMode() == KBCfgTrigger.KBTriggerAdv2AliveMode)
+                            {
+                                Log.v(LOG_TAG, "device will always advertisement, but the uuid is difference when trigger event happened");
+                            }
+
+                            //button trigger adv type
+                            Log.v(LOG_TAG, "Button trigger adv type:" + btnCfg.getTriggerAdvType());
+
+                            //button trigger adv duration, unit is sec
+                            Log.v(LOG_TAG, "Button trigger adv duration:" + btnCfg.getTriggerAdvTime());
+
+                            //button trigger adv interval, unit is ms
+                            Log.v(LOG_TAG, "Button trigger adv interval:" +  btnCfg.getTriggerAdvInterval());
+                        }
+                        else
+                        {
+                            Log.v(LOG_TAG, "trigger type:" + btnCfg.getTriggerType() + " is off");
+                        }
+                    }
+
+                    toastShow("enable push button trigger success");
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //ring device
+    public void ringDevice() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        KBCfgCommon cfgCommon = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        if (!cfgCommon.isSupportBeep())
+        {
+            toastShow("device does not support ring feature");
+            return;
+        }
+
+        mRingButton.setEnabled(false);
+        HashMap<String, Object> cmdPara = new HashMap<>(5);
+        cmdPara.put("msg", "ring");
+        cmdPara.put("ringTime", 20000);   //ring times, uint is ms
+        cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
+        cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
+        cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
+        mRingButton.setEnabled(false);
+        mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {
+            @Override
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mRingButton.setEnabled(true);
+                if (bConfigSuccess)
+                {
+                    toastShow("send command to beacon success");
+                }
+                else
+                {
+                    toastShow("send command to beacon error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    public void enableAdvTypeIncludeAccXYZ()
+    {
+        KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        KBCfgSensor oldSensorCfg = (KBCfgSensor)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeSensor);
+
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        if (!oldCommonCfg.isSupportAccSensor())
+        {
+            toastShow("Device does not supported acc sensor");
+            return;
+        }
+
+        try {
+            //enable ksensor advertisement
+            ArrayList<KBCfgBase> newCfg = new ArrayList<>(2);
+            if ((oldCommonCfg.getAdvType() & KBAdvType.KBAdvTypeSensor) == 0) {
+                KBCfgCommon newCommonCfg = new KBCfgCommon();
+                newCommonCfg.setAdvType(KBAdvType.KBAdvTypeSensor);
+                newCfg.add(newCommonCfg);
+            }
+
+            //enable acc sensor XYZ dection
+            Integer nOldSensorType = oldSensorCfg.getSensorType();
+            if ((nOldSensorType & KBCfgSensor.KBSensorTypeAcc) == 0) {
+                KBCfgSensor sensorCfg = new KBCfgSensor();
+                sensorCfg.setSensorType(KBCfgSensor.KBSensorTypeAcc | nOldSensorType);
+                newCfg.add(sensorCfg);
+            }
+
+            nEnableAccSensor.setEnabled(false);
+            mBeacon.modifyConfig(newCfg, new KBeacon.ActionCallback() {
+                @Override
+                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                    nEnableAccSensor.setEnabled(true);
+                    if (bConfigSuccess){
+                        Log.v(LOG_TAG, "enable acc advertisement success");
+                    }else{
+                        Log.v(LOG_TAG, "enable acc advertisement failed");
+                    }
+                }
+            });
+        }
+        catch (Exception excpt)
+        {
+            Log.v(LOG_TAG, "config acc advertisement failed");
+        }
+    }
+
+
+    public void setTHMeasureParameters()
+    {
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        KBCfgCommon commonCfg = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        if (!commonCfg.isSupportHumiditySensor())
+        {
+            toastShow("Device does not supported humidity sensor");
+            return;
+        }
+
+
+        try {
+            KBCfgSensor cfgSensor = new KBCfgSensor();
+
+            //unit is second, set measure temperature and humidity interval
+            cfgSensor.setSensorHtMeasureInterval(2);
+
+            //unit is 0.1%, if abs(current humidity - last saved humidity) > 3, then save new record
+            cfgSensor.setHumidityChangeThreshold(30);
+
+            //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then save new record
+            cfgSensor.setTemperatureChangeThreshold(5);
+
+            ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+            cfgList.add(cfgSensor);
+            mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+                @Override
+                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                    if (bConfigSuccess)
+                    {
+                        toastShow("config data to beacon success");
+                    }
+                    else
+                    {
+                        toastShow("config failed for error:" + error.errorCode);
+                    }
+                }
+            });
+        }catch (Exception excpt)
+        {
+            toastShow("config data is invalid");
+            excpt.printStackTrace();
+        }
+    }
+
+
+    private int nDeviceConnState = KBeacon.KBStateDisconnected;
+
+    public void onConnStateChange(KBeacon beacon, int state, int nReason)
+    {
+        if (state == KBeacon.KBStateConnected)
+        {
+            Log.v(LOG_TAG, "device has connected");
+            invalidateOptionsMenu();
+
+            nDeviceConnState = state;
+        }
+        else if (state == KBeacon.KBStateConnecting)
+        {
+            Log.v(LOG_TAG, "device start connecting");
+            invalidateOptionsMenu();
+
+            nDeviceConnState = state;
+        }
+        else if (state == KBeacon.KBStateDisconnecting) {
+            Log.e(LOG_TAG, "connection error, now disconnecting");
+        }
+        else
+        {
+            if (nDeviceConnState == KBeacon.KBStateConnecting)
+            {
+                if (nReason == KBConnectionEvent.ConnAuthFail)
+                {
+                    final EditText inputServer = new EditText(this);
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(getString(R.string.auth_error_title));
+                    builder.setView(inputServer);
+                    builder.setNegativeButton(R.string.Dialog_Cancel, null);
+                    builder.setPositiveButton(R.string.Dialog_OK, null);
+                    final AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+
+                    alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            String strNewPassword = inputServer.getText().toString().trim();
+                            if (strNewPassword.length() < 8|| strNewPassword.length() > 16)
+                            {
+                                Toast.makeText(DevicePannelActivity.this,
+                                        R.string.connect_error_auth_format,
+                                        Toast.LENGTH_SHORT).show();
+                            }else {
+                                mPref.setPassword(mDeviceAddress, strNewPassword);
+                                alertDialog.dismiss();
+                            }
+                        }
+                    });
+                }
+                else
+                {
+                    toastShow("connect to device failed, reason:" + nReason);
+                }
+            }
+
+            Log.e(LOG_TAG, "device has disconnected:" +  nReason);
+            invalidateOptionsMenu();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        /*
+        if (mBeacon.getState() == KBeacon.KBStateConnected
+            || mBeacon.getState() == KBeacon.KBStateConnecting){
+            mBeacon.disconnect();
+            invalidateOptionsMenu();
+        }
+        */
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if(id == R.id.menu_connect){
+            //connect and sync the UTC time to device
+            KBConnPara connPara = new KBConnPara();
+            connPara.utcTime = UTCTime.getUTCTimeSeconds();
+            mBeacon.connectEnhanced(mPref.getPassword(mDeviceAddress),
+                    20*1000,
+                    connPara,
+                    this);
+            invalidateOptionsMenu();
+        }
+        else if(id == R.id.menu_disconnect){
+            mBeacon.disconnect();
+            invalidateOptionsMenu();
+        }
+        else if(id == android.R.id.home){
+            mBeacon.disconnect();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+}

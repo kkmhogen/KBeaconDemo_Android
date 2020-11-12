@@ -31,15 +31,15 @@ Development environment:
 Android Studio  
 minSdkVersion 21
 
-1. The kbeaconlib library may be found on jcenter repository. Add it to your project by adding the following dependency in your build.gradle:
+1. The kbeaconlib library can be found on jcenter repository. Add it to your project by adding the following dependency in your build.gradle:
 
 ```Java
 dependencies {
    …
-   implementation 'com.kbeacon:kbeaconlib:1.0.1'
+   implementation 'com.kbeacon:kbeaconlib:1.0.4'
 }
 ```
-
+The kbeaconlib is open source code, it was in demo directory. You can also modify the source code and import it to your project.
 2. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:
 
 ```Java
@@ -59,6 +59,10 @@ For android version > 10, if you want the app scanning KBeacons in background, p
 ```
 
 ## 4. How to use SDK
+There are 3 projects in the SDK, if you plan to use KBeacon for iBeacon related applications. I suggest you develop based on iBeacondemo.  
+If your application is based on the Eddystone protocol, I suggest you start from eddystonedemo.  
+If you are using KBeacon for sensors, such as temperature, humidity, and motion monitoring, please start base on sensordemo.
+
 ### 4.1 Scanning device
 1. Init KBeaconMgr instance in Activity, also your application should implementation the scanning callback.
 
@@ -1035,19 +1039,259 @@ Enabling motion trigger is similar to push button trigger, which will not be des
 }
 ```
 
-#### 4.3.5 Send command to device
+#### 4.3.4.2 Temperature&Humidity trigger
+The app can configure KBeacon to start broadcasting after detecting an abnormality. For example, the temperature exceeds a specified threshold, or the temperature is below a certain threshold. Currently KBeacon supports the following 4 conditions, the conndition are OR relerationship.
+* KBTriggerHTParaMaskTemperatureAbove
+* KBTriggerHTParaMaskTemperatureBelow
+* KBTriggerHTParaMaskHumidityAbove
+* KBTriggerHTParaMaskHumidityBelow
+
+The app can also enable the KBeacon to send the trigger event to the app which connected to it.
+
+1. Enable temperature&humidity trigger feature.  
+
+```Java
+public void enableTHTrigger() {
+        if (!mBeacon.isConnected()) {
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeHumidity) == 0) {
+            Log.e(LOG_TAG, "device does not support humidity trigger");
+            return;
+        }
+
+        KBCfgHumidityTrigger thTriggerPara = new KBCfgHumidityTrigger();
+
+        try {
+            //set trigger type
+            thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
+
+            //set trigger advertisement enable
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAdv);
+
+            //set trigger adv mode to adv only on trigger
+            thTriggerPara.setTriggerAdvMode(KBCfgTrigger.KBTriggerAdvOnlyMode);
+
+            //set trigger condition
+            thTriggerPara.setTriggerHtParaMask(KBCfgHumidityTrigger.KBTriggerHTParaMaskTemperatureAbove
+                    | KBCfgHumidityTrigger.KBTriggerHTParaMaskTemperatureBelow);
+            thTriggerPara.setTriggerTemperatureAbove(45);
+            thTriggerPara.setTriggerTemperatureBelow(-10);
+
+            //set trigger adv type
+            thTriggerPara.setTriggerAdvType(KBAdvType.KBAdvTypeSensor);
+
+            //set trigger adv duration to 20 seconds
+            thTriggerPara.setTriggerAdvTime(20);
+
+            //set the trigger adv interval to 500ms
+            thTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mTriggerTH.setEnabled(false);
+        this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mTriggerTH.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable temp&humidity trigger success");
+                } else {
+                    toastShow("enable temp&humidity error:" + error.errorCode);
+                }
+            }
+        });
+    }
+```
+
+#### 4.3.5 Read sensor records
+Sometimes we may need to use KBeacon to record sensor data, such as temperature and humidity, then we can read these records through the APP.
+Also we may need to configure some parameters of the sensor, such as the measurement interval, temperature change threshold.
+
+#### 4.3.5.1 Config sensor paramaters
+```Java
+public void setTHMeasureParameters()
+ {
+     try {
+         KBCfgSensor cfgSensor = new KBCfgSensor();
+
+         //unit is second, set measure temperature and humidity interval
+         cfgSensor.setSensorHtMeasureInterval(2);
+
+         //unit is 0.1%, if abs(current humidity - last saved humidity) > 3, then save new record
+         cfgSensor.setHumidityChangeThreshold(30);
+
+         //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then save new record
+         cfgSensor.setTemperatureChangeThreshold(5);
+
+         ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
+         cfgList.add(cfgSensor);
+         mBeacon.modifyConfig(cfgList, new KBeacon.ActionCallback() {
+             @Override
+             public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                 if (bConfigSuccess)
+                 {
+                     toastShow("config data to beacon success");
+                 }
+                 else
+                 {
+                     toastShow("config failed for error:" + error.errorCode);
+                 }
+             }
+         });
+     }catch (Exception excpt)
+     {
+         toastShow("config data is invalid");
+         excpt.printStackTrace();
+     }
+ }
+```
+
+#### 4.3.5.1 Read sensor history records
+1. read history summary information.
+```Java
+KBHumidityDataMsg mSensorDataMsg = new KBHumidityDataMsg();
+mSensorDataMsg.readSensorDataInfo(mBeacon,
+        new KBSensorDataMsgBase.ReadSensorCallback()
+        {
+            @Override
+            public void onReadComplete(boolean bConfigSuccess, Object obj, KBException error)
+            {
+
+                if (bConfigSuccess){
+                  ReadHTSensorInfoRsp infRsp = (ReadHTSensorInfoRsp) obj;
+                  mUtcOffset = UTCTime.getUTCTimeSeconds() - infRsp.readInfoUtcSeconds;
+                  Log.v(LOG_TAG, "Total records in device:" + infRsp.totalRecordNumber);
+                  Log.v(LOG_TAG, "Un read records in device:" + infRsp.unreadRecordNumber);
+              }
+            }
+        }
+    );
+```
+2.  Read history records  
+  The SDK provides the following three ways to read records.
+  * READ_RECORD_NEW_RECORD:  read history records and move next. After app reading records, the KBeacon device will move the pointer to the next unreaded record. If the app send read request again, the KBeacon device sends next unread records and move the pointer to next.
+
+  * READ_RECORD_ORDER: Read records without pointer moving. The app can read records from old to recently. To read records in this way, the app must  specify the record no to be read.
+
+  * READ_RECORD_REVERSE_ORDER: Read records without pointer moving. The app can read records from recently to old. To read records in this way, the app must  specify the record no to be read.
+
+   Example1: The app read the temperature and humidity records. Each time the records was read, the pointer will move to next.
+```Java
+    mSensorDataMsg.readSensorRecord(mBeacon,
+        INVALID_DATA_RECORD_POS, //set to INVALID_DATA_RECORD_POS
+        KBSensorDataMsgBase.READ_RECORD_NEW_RECORD,  //read direction type
+        30,   //number of records the app want to read
+        new KBSensorDataMsgBase.ReadSensorCallback()
+        {
+            @Override
+            public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+                if (bConfigSuccess)
+                {
+                  ReadHTSensorDataRsp dataRsp = (ReadHTSensorDataRsp) obj;
+                  for (KBHumidityRecord record: dataRsp.readDataRspList)
+                  {
+                      Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                      Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
+                      Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
+                  }
+
+                  if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+                  {
+                      Log.v(LOG_TAG, "Read data complete");
+                  }
+              }
+
+            }
+        }
+);
+```  
+
+  Example2: The app read the temperature and humidity records without moving pointer.
+  The device has 100 records sorted by time, the app want to reading 20 records and start from the No 99. The Kbeacon will send records #99 ~ #90 to app by reverse order.     
+  If the app does not known the last record no, then the value can set to INVALID_DATA_RECORD_POS.
+```Java
+ mSensorDataMsg.readSensorRecord(mBeacon,
+     INVALID_DATA_RECORD_POS,   // 99 or INVALID_DATA_RECORD_POS
+     KBSensorDataMsgBase.READ_RECORD_REVERSE_ORDER,
+     10,
+     new KBSensorDataMsgBase.ReadSensorCallback()
+     {
+         @Override
+         public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+             if (bConfigSuccess)
+             {
+
+               ReadHTSensorDataRsp dataRsp = (ReadHTSensorDataRsp) obj;
+
+               //the Kbeacon return records 99 ~ 80
+               for (KBHumidityRecord record: dataRsp.readDataRspList)
+               {
+                   Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                   Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
+                   Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
+               }
+
+               if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+               {
+                   Log.v(LOG_TAG, "Read data complete");
+               }
+           }
+         }
+     }
+);
+```  
+
+ Example3: The app read the temperature and humidity records without moving pointer.
+ The device has 100 records sorted by time, the app want to reading 20 records and start from No 10. The Kbeacon will send records #10 ~ #29 to app.  
+```Java
+ mSensorDataMsg.readSensorRecord(mBeacon,
+     10,  //start read record no
+     KBSensorDataMsgBase.READ_RECORD_ORDER,   //read direction, from oldes to recent
+     20,  //max read records number
+     new KBSensorDataMsgBase.ReadSensorCallback()
+     {
+         @Override
+         public void onReadComplete(boolean bConfigSuccess,  Object obj, KBException error) {
+             if (bConfigSuccess)
+             {
+               ReadHTSensorDataRsp dataRsp = (ReadHTSensorDataRsp) obj;
+
+               //the Kbeacon return records 10 ~ 29
+               for (KBHumidityRecord record: dataRsp.readDataRspList)
+               {
+                   Log.v(LOG_TAG, "record utc time:" + record.mUtcTime);
+                   Log.v(LOG_TAG, "record temperature:" + record.mTemperature);
+                   Log.v(LOG_TAG, "record humidity:" + record.mHumidity);
+               }
+
+               if (dataRsp.readDataNextPos == INVALID_DATA_RECORD_POS)
+               {
+                   Log.v(LOG_TAG, "Read data complete");
+               }
+           }
+         }
+     }
+);
+```
+#### 4.3.6 Send command to device
 After app connect to device success, the app can send command to device.  
 All command message between app and KBeacon are JSON format. Our SDK provide Hash Map to encapsulate these JSON message.
-#### 4.3.5.1 Ring device
+#### 4.3.6.1 Ring device
  For some KBeacon device that has buzzer function. The app can ring device. For ring command, it has 5 parameters:
  * msg: msg type is 'ring'
  * ringTime: unit is ms. The KBeacon will start flash/alert for 'ringTime' millisecond  when receive this command.
  * ringType: 0x0:led flash only; 0x1:beep alert only; 0x2 both led flash and beep;
  * ledOn: optional parameters, unit is ms. The LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.
- * ledOff: optional parameters, unit is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.
+ * ledOff: optional parameters, unit is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.  
 
-```Java
-public void ringDevice() {
+  ```Java
+ public void ringDevice() {
         if (!mBeacon.isConnected()) {
             return;
         }
@@ -1076,11 +1320,11 @@ public void ringDevice() {
     }
 ```
 
-#### 4.3.5.2 Reset configuration to default
+#### 4.3.6.2 Reset configuration to default
  The app can use follow command to reset all configurations to default.
  * msg: message type is 'reset'
 
-```Java
+ ```Java
     public void resetParameters() {
         if (!mBeacon.isConnected()) {
             return;
@@ -1109,7 +1353,7 @@ public void ringDevice() {
     }
 ```
 
-#### 4.3.6 Error cause in configurations/command
+#### 4.3.7 Error cause in configurations/command
  App may get errors during the configuration. The KBException has follow values.
  * KBException.KBEvtCfgNoParameters: parameters is null
  * KBException.KBEvtCfgBusy: device is busy, please make sure last configuration complete
@@ -1165,7 +1409,8 @@ public void ringDevice() {
         }
     });
 }
- ```
+ ```  
+
 ## 5. DFU
 Through the DFU function, you can upgrade the firmware of the device. Our DFU function is based on Nordic's DFU library. In order to make it easier for you to integrate the DFU function, We add the DFU function into ibeacondemo demo project for your reference. The Demo about DFU includes the following class:
 * KBeaconDFUActivity: DFU UI activity and procedure about how to download latest firmware.

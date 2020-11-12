@@ -13,23 +13,21 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.kbeacon.ibeacondemo.AppBaseActivity;
-import com.kbeacon.ibeacondemo.R;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
 import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
 import com.kbeacon.kbeaconlib.KBException;
 import com.kbeacon.kbeaconlib.KBeacon;
 import com.kbeacon.kbeaconlib.KBeaconsMgr;
+import com.kbeacon.ibeacondemo.R;
 
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Map;
 
 import androidx.annotation.NonNull;
 import no.nordicsemi.android.dfu.DfuProgressListener;

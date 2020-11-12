@@ -337,16 +337,17 @@
 
 
                 <Button
-                    android:id="@+id/ringDevice"
+                    android:id="@+id/resetConfigruation"
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
-                    android:text="@string/ring_device_btn_title" />
+                    android:text="@string/reset_device_btn_title" />
 
                 <Button
                     android:id="@+id/enableBtnTrigger"
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
                     android:text="@string/enable_btn_trigger" />
+
 
             </LinearLayout>
 
@@ -370,7 +371,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
                     android:text="@string/update_ibeacon_2_tlm" />
-
 
 
             </LinearLayout>
