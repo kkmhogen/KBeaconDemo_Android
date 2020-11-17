@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kbeacon:kbeaconlib:1.0.4'
+   implementation 'com.kbeacon:kbeaconlib:1.0.5'
 }
 ```
 
