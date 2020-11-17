@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.kbeacon.eddystone">
+    package="com.kbeacon.eddystone"
+    android:versionCode="30"
+    android:versionName="2.03">
 
 
 

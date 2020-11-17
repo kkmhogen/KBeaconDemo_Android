@@ -30,7 +30,7 @@ repositories {
 dependencies {
     implementation 'com.android.support:support-v4:29.2.0'
     implementation 'com.android.support:appcompat-v7:29.2.0'
-    implementation 'com.kbeacon:kbeaconlib:1.0.4'
+    implementation 'com.kbeacon:kbeaconlib:1.0.5'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'no.nordicsemi.android:dfu:1.10.3'
 
