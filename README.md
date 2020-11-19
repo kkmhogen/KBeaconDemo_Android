@@ -1035,7 +1035,7 @@ Enabling motion trigger is similar to push button trigger, which will not be des
 }
 ```
 
-#### 4.3.4.2 Temperature&Humidity trigger
+#### 4.3.4.3 Temperature&Humidity trigger
 The app can configure KBeacon to start broadcasting after detecting an abnormality. For example, the temperature exceeds a specified threshold, or the temperature is below a certain threshold. Currently KBeacon supports the following 4 conditions, the conndition are OR relerationship.
 * KBTriggerHTParaMaskTemperatureAbove
 * KBTriggerHTParaMaskTemperatureBelow
@@ -1105,11 +1105,14 @@ public void enableTHTrigger() {
     }
 ```
 
-#### 4.3.5 Read sensor records
-Sometimes we may need to use KBeacon to record sensor data, such as temperature and humidity, then we can read these records through the APP.
-Also we may need to configure some parameters of the sensor, such as the measurement interval, temperature change threshold.
+#### 4.3.5 Temperature&Humidity sensor logger
+The temperature and humidity sensor will be turn on under the following conditions. 
+* The app enable KSensor advertisement and set the kbeacon report humidity data in advertisement.
+* The app enable temperature and humidity trigger.
+After turning on humidity sensor, the kbeacon will start log when it detects the temperature and humidity changed. The app can config the change threshold.
 
-#### 4.3.5.1 Config sensor paramaters
+
+#### 4.3.5.1 Config measure paramaters
 ```Java
 public void setTHMeasureParameters()
  {
@@ -1119,10 +1122,10 @@ public void setTHMeasureParameters()
          //unit is second, set measure temperature and humidity interval
          cfgSensor.setSensorHtMeasureInterval(2);
 
-         //unit is 0.1%, if abs(current humidity - last saved humidity) > 3, then save new record
+         //unit is 0.1%, if abs(current humidity - last saved humidity) > 3, then log new record
          cfgSensor.setHumidityChangeThreshold(30);
 
-         //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then save new record
+         //unit is 0.1 Celsius, if abs(current temperature - last saved temperature) > 0.5, then log new record
          cfgSensor.setTemperatureChangeThreshold(5);
 
          ArrayList<KBCfgBase> cfgList = new ArrayList<>(2);
@@ -1148,7 +1151,79 @@ public void setTHMeasureParameters()
  }
 ```
 
-#### 4.3.5.1 Read sensor history records
+#### 4.3.5.2 enable temperature and humidity logger
+The app sets kbeacon to enable temperature sensor, and carries temperature and humidity information in the advertisement message. At this time kbeacon will also log the temperature and humidity.
+```Java
+	//Please make sure the app does not enable any trigger's advertisement mode to KBTriggerAdvOnlyMode
+    //If the app set some trigger advertisement mode to KBTriggerAdvOnlyMode, then the device only start advertisement when trigger event happened.
+    //when this function enabled, then the device will include the realtime temperature and humidity data in advertisement
+    public void enableTHRealtimeDataToAdv()
+    {
+        final KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
+        final KBCfgSensor oldSensorCfg = (KBCfgSensor)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeSensor);
+
+        if (!mBeacon.isConnected())
+        {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        if (!oldCommonCfg.isSupportHumiditySensor())
+        {
+            return;
+        }
+
+        try {
+            //disable temperature trigger, if you enable other trigger, for example, motion trigger, button trigger, please set the trigger adv mode to always adv mode
+            //or disable that trigger
+            KBCfgHumidityTrigger thTriggerPara = new KBCfgHumidityTrigger();
+            thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+
+            nEnableTHData2Adv.setEnabled(false);
+            this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
+                public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                    //enable humidity sensor data to advertisement
+                    try {
+                        ArrayList<KBCfgBase> newCfg = new ArrayList<>(2);
+                        if ((oldCommonCfg.getAdvType() & KBAdvType.KBAdvTypeSensor) == 0) {
+                            KBCfgCommon newCommonCfg = new KBCfgCommon();
+                            newCommonCfg.setAdvType(KBAdvType.KBAdvTypeSensor);
+                            newCfg.add(newCommonCfg);
+                        }
+
+                        //enable temperature and humidity logger
+                        Integer nOldSensorType = oldSensorCfg.getSensorType();
+                        if ((nOldSensorType & KBCfgSensor.KBSensorTypeHumidity) == 0) {
+                            KBCfgSensor sensorCfg = new KBCfgSensor();
+                            sensorCfg.setSensorType(KBCfgSensor.KBSensorTypeHumidity | nOldSensorType);
+                            newCfg.add(sensorCfg);
+                        }
+                        mBeacon.modifyConfig(newCfg, new KBeacon.ActionCallback() {
+                            @Override
+                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                nEnableTHData2Adv.setEnabled(true);
+                                if (bConfigSuccess) {
+                                    Log.v(LOG_TAG, "enable humidity advertisement success");
+                                }
+                            }
+                        });
+                    }
+                    catch (Exception excpt)
+                    {
+                        excpt.printStackTrace();
+                    }
+                }
+            });
+        }
+        catch (Exception excpt)
+        {
+            Log.v(LOG_TAG, "config humidity advertisement failed");
+        }
+    }
+```
+
+#### 4.3.5.3 Read sensor history records
 1. read history summary information.
 ```Java
 KBHumidityDataMsg mSensorDataMsg = new KBHumidityDataMsg();
@@ -1169,7 +1244,8 @@ mSensorDataMsg.readSensorDataInfo(mBeacon,
         }
     );
 ```
-2.  Read history records  
+	
+2.  Read log history records  
   The SDK provides the following three ways to read records.
   * READ_RECORD_NEW_RECORD:  read history records and move next. After app reading records, the KBeacon device will move the pointer to the next unreaded record. If the app send read request again, the KBeacon device sends next unread records and move the pointer to next.
 

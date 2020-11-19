@@ -244,7 +244,7 @@
 
     <string name="button_trigger_command">Button trigger command:</string>
     <string name="motion_sensor_command">Motion sensor command:</string>
-    <string name="temp_humidity_sensor_command">Temperature&amp;humidity sensor</string>
+    <string name="temp_humidity_sensor_command">Temperature&amp;humidity Logger</string>
     <string name="other_sensor_command">Other sensor sensor</string>
     <string name="ring_device_btn_title">Ring device</string>
 
@@ -252,8 +252,8 @@
     <string name="read_btn_trigger">Read Trigger parameters</string>
 
 
-    <string name="enable_th_trigger_adv">Change event to Adv</string>
-    <string name="enable_th_change_report">Change event to App</string>
+    <string name="enable_th_trigger_adv">Trigger event to Adv</string>
+    <string name="enable_th_change_report">Trigger event to App</string>
 
     <string name="DEVICE_DFU_TITLE">Firmware Update</string>
     <string name="DEVICE_DFU_STATUS">Status</string>
@@ -297,15 +297,15 @@
     <string name="track_clear_success">Clear history data success</string>
     <string name="no_data_to_export">No data need to export</string>
     <string name="track_clear_history_desc">Once you clear the record, all distancing records will be lost, are you sure you want to continue?</string>
-    <string name="VIEW_TEMP_HUMIDITY_HISTORY">View T&amp;H History</string>
+    <string name="VIEW_TEMP_HUMIDITY_HISTORY">View T&amp;H Log History</string>
     <string name="track_alarm_history_clear">Clear</string>
     <string name="track_alarm_history_export">Export</string>
 
     <string name="ENABLE_MOTION_TRIGGER">Enable Motion trigger</string>
     <string name="ENABLE_AXIS_ADVERTISEMENT">Enable axis report</string>
 
-    <string name="enable_th_adv_report">T&amp;H data to Adv</string>
-    <string name="enable_th_report">T&amp;H data to app</string>
+    <string name="enable_th_adv_report">Log data to Adv</string>
+    <string name="enable_th_report">Log data to app</string>
     <string name="TEMP_HUMIDITY_SETTING">T&amp;H Setting:</string>
     <string name="TH_MEASURE_INTERVAL">Measure interval:</string>
     <string name="TEMP_CHANGE_THD">Temperature change threshold:</string>

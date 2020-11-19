@@ -313,7 +313,6 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
             thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
 
-            //subscribe humidity notify
             nEnableTHData2App.setEnabled(false);
             this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
                 public void onActionComplete(boolean bConfigSuccess, KBException error) {
@@ -321,6 +320,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                     if (bConfigSuccess) {
                         Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
 
+                        //subscribe humidity notify
                         if (!mBeacon.isSensorDataSubscribe(KBHumidityNotifyData.class)) {
                             mBeacon.subscribeSensorDataNotify(KBHumidityNotifyData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
                                 @Override
@@ -394,7 +394,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             return;
         }
 
-        //enable push button trigger
+        //enable humidity trigger
         nEnableTHTrigger2Adv.setEnabled(false);
         this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
@@ -733,7 +733,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
-    public void enableAdvTypeIncludeAccXYZ()
+    public void  enableAdvTypeIncludeAccXYZ()
     {
         KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
         KBCfgSensor oldSensorCfg = (KBCfgSensor)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeSensor);
