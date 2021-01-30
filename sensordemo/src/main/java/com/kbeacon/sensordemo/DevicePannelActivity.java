@@ -190,8 +190,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 break;
 
             case R.id.enableBtnTrigger:
-                //enableButtonTrigger();
-                enableBtnTriggerEvtToApp2Adv();
+                enableButtonTrigger();
                 break;
 
             case R.id.disableBtnTrigger:
