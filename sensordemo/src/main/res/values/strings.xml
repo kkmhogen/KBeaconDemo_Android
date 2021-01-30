@@ -248,8 +248,9 @@
     <string name="other_sensor_command">Other sensor sensor</string>
     <string name="ring_device_btn_title">Ring device</string>
 
-    <string name="enable_btn_trigger">Enable button Trigger</string>
-    <string name="read_btn_trigger">Read Trigger parameters</string>
+    <string name="enable_btn_trigger">Enable Trigger</string>
+    <string name="disable_btn_trigger">Disable Trigger</string>
+    <string name="read_btn_trigger">Read parameters</string>
 
 
     <string name="enable_th_trigger_adv">Trigger event to Adv</string>
@@ -301,8 +302,9 @@
     <string name="track_alarm_history_clear">Clear</string>
     <string name="track_alarm_history_export">Export</string>
 
-    <string name="ENABLE_MOTION_TRIGGER">Enable Motion trigger</string>
-    <string name="ENABLE_AXIS_ADVERTISEMENT">Enable axis report</string>
+    <string name="ENABLE_MOTION_TRIGGER">Enable trigger</string>
+    <string name="DISABLE_MOTION_TRIGGER">Disable trigger</string>
+    <string name="ENABLE_AXIS_ADVERTISEMENT">Enable axis adv</string>
 
     <string name="enable_th_adv_report">Log data to Adv</string>
     <string name="enable_th_report">Log data to app</string>

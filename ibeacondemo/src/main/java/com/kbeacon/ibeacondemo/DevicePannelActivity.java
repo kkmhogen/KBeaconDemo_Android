@@ -203,7 +203,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 if (bConfigSuccess) {
                     toastShow("enable push button trigger success");
                 } else {
-                    toastShow("enable push button trgger error:" + error.errorCode);
+                    toastShow("enable push button trigger error:" + error.errorCode);
                 }
             }
         });

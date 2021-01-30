@@ -89,7 +89,6 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="0dp"
-                android:gravity="left"
                 android:orientation="horizontal"
                 android:weightSum="1.0">
 
@@ -106,6 +105,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
                     android:text="@string/enable_btn_trigger"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/disableBtnTrigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/disable_btn_trigger"
                     android:textAllCaps="false" />
 
 
@@ -129,7 +135,7 @@
                 android:weightSum="1.0">
 
                 <Button
-                    android:id="@+id/enableAccAdvertisement"
+                    android:id="@+id/enableAxisAdvertisement"
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
                     android:text="@string/ENABLE_AXIS_ADVERTISEMENT"
@@ -137,11 +143,19 @@
 
 
                 <Button
-                    android:id="@+id/enableAccTrigger"
+                    android:id="@+id/enableMotionTrigger"
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
                     android:text="@string/ENABLE_MOTION_TRIGGER"
                     android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/disableMotionTrigger"
+                    android:layout_width="wrap_content"
+                    android:layout_height="50dp"
+                    android:text="@string/DISABLE_MOTION_TRIGGER"
+                    android:textAllCaps="false" />
+
 
 
             </LinearLayout>

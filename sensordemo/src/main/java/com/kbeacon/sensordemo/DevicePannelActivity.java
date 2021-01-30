@@ -1,7 +1,6 @@
 package com.kbeacon.sensordemo;
 
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothClass;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,7 +14,10 @@ import android.widget.Toast;
 
 import com.kbeacon.kbeaconlib.KBConnPara;
 import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBHumidityNotifyData;
+import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyButtonEvtData;
 import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyDataBase;
+import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyDataType;
+import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyMotionEvtData;
 import com.kbeacon.kbeaconlib.UTCTime;
 import com.kbeacon.sensordemo.dfulibrary.KBeaconDFUActivity;
 import com.kbeacon.sensordemo.recordhistory.CfgHTBeaconHistoryActivity;
@@ -50,9 +52,10 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     //uiview
     private TextView mBeaconType, mBeaconStatus;
     private TextView mBeaconModel;
-    private Button nEnableTHData2Adv, nEnableTHData2App, mViewTHDataHistory;
-    private Button nEnableTHTrigger2Adv, nEnableTHTrigger2App;
-    private Button mRingButton, nEnableAccSensor, nEnableAccTrigger, mTriggerButton;
+    private Button mEnableTHData2Adv, mEnableTHData2App, mViewTHDataHistory;
+    private Button mEnableTHTrigger2Adv, mEnableTHTrigger2App;
+    private Button mRingButton, mEnableAxisAdv, mEnableMotionTrigger, mDisableMotionTrigger;
+    private Button mEnableBtnTrigger, mDisableBtnTrigger;
     private String mNewPassword;
     SharePreferenceMgr mPref;
 
@@ -76,37 +79,46 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         mBeaconModel = (TextView) findViewById(R.id.beaconModle);
 
         //send temperature and humidity in advertisement
-        nEnableTHData2Adv = (Button) findViewById(R.id.enableTHDataToAdv);
-        nEnableTHData2Adv.setOnClickListener(this);
+        mEnableTHData2Adv = (Button) findViewById(R.id.enableTHDataToAdv);
+        mEnableTHData2Adv.setOnClickListener(this);
 
         //send temperature humidity data to app
-        nEnableTHData2App = findViewById(R.id.enableTHDataToApp);
-        nEnableTHData2App.setOnClickListener(this);
+        mEnableTHData2App = findViewById(R.id.enableTHDataToApp);
+        mEnableTHData2App.setOnClickListener(this);
 
         //view temperature and humidity data history
         mViewTHDataHistory = findViewById(R.id.viewTHDataHistory);
         mViewTHDataHistory.setOnClickListener(this);
 
         //report trigger to adv
-        nEnableTHTrigger2Adv = findViewById(R.id.enableTHChangeTriggerEvtRpt2Adv);
-        nEnableTHTrigger2Adv.setOnClickListener(this);
+        mEnableTHTrigger2Adv = findViewById(R.id.enableTHChangeTriggerEvtRpt2Adv);
+        mEnableTHTrigger2Adv.setOnClickListener(this);
 
         //enable humidity data report only changed
-        nEnableTHTrigger2App = findViewById(R.id.enableTHChangeTriggerEvtRpt2App);
-        nEnableTHTrigger2App.setOnClickListener(this);
+        mEnableTHTrigger2App = findViewById(R.id.enableTHChangeTriggerEvtRpt2App);
+        mEnableTHTrigger2App.setOnClickListener(this);
 
-        //enable acc
-        nEnableAccSensor = findViewById(R.id.enableAccAdvertisement);
-        nEnableAccSensor.setOnClickListener(this);
+        //enable axis report to adv
+        mEnableAxisAdv = findViewById(R.id.enableAxisAdvertisement);
+        mEnableAxisAdv.setOnClickListener(this);
 
-        nEnableAccTrigger = findViewById(R.id.enableAccTrigger);
-        nEnableAccTrigger.setOnClickListener(this);
+        //enable motion trigger
+        mEnableMotionTrigger = findViewById(R.id.enableMotionTrigger);
+        mEnableMotionTrigger.setOnClickListener(this);
+
+        mDisableMotionTrigger = findViewById(R.id.disableMotionTrigger);
+        mDisableMotionTrigger.setOnClickListener(this);
+
 
         mRingButton = (Button) findViewById(R.id.ringDevice);
         mRingButton.setOnClickListener(this);
 
-        mTriggerButton = (Button) findViewById(R.id.enableBtnTrigger);
-        mTriggerButton.setOnClickListener(this);
+        mEnableBtnTrigger = (Button) findViewById(R.id.enableBtnTrigger);
+        mEnableBtnTrigger.setOnClickListener(this);
+
+        mDisableBtnTrigger = (Button) findViewById(R.id.disableBtnTrigger);
+        mDisableBtnTrigger.setOnClickListener(this);
+
 
         findViewById(R.id.dfuDevice).setOnClickListener(this);
         findViewById(R.id.readBtnTriggerPara).setOnClickListener(this);
@@ -149,12 +161,16 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     {
         switch (v.getId()) {
 
-            case R.id.enableAccAdvertisement:
+            case R.id.enableAxisAdvertisement:
                 enableAdvTypeIncludeAccXYZ();
                 break;
 
-            case R.id.enableAccTrigger:
-                enableMotionTrigger();
+            case R.id.enableMotionTrigger:
+                enableMotionTriggerToAdv();
+                break;
+
+            case R.id.disableMotionTrigger:
+                disableMotionTrigger();
                 break;
 
             case R.id.enableTHDataToAdv:
@@ -174,7 +190,12 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 break;
 
             case R.id.enableBtnTrigger:
-                enableButtonTrigger();
+                //enableButtonTrigger();
+                enableBtnTriggerEvtToApp2Adv();
+                break;
+
+            case R.id.disableBtnTrigger:
+                disableButtonTrigger();
                 break;
 
             case R.id.readBtnTriggerPara:
@@ -206,18 +227,33 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
     }
 
+    //handle trigger event
     public void onNotifyDataReceived(KBeacon beacon, int nDataType, KBNotifyDataBase sensorData)
     {
-        KBHumidityNotifyData notifyData = (KBHumidityNotifyData)sensorData;
+        if (nDataType == KBNotifyDataType.NTF_DATA_TYPE_HUMIDITY) {
+            KBHumidityNotifyData notifyData = (KBHumidityNotifyData) sensorData;
 
-        float humidity = notifyData.getHumidity();
-        float temperature = notifyData.getTemperature();
-        long nEventTime = notifyData.getEventUTCTime();
+            float humidity = notifyData.getHumidity();
+            float temperature = notifyData.getTemperature();
+            long nEventTime = notifyData.getEventUTCTime();
 
-        String strEvtUtcTime;
-        strEvtUtcTime = mUtcTimeFmt.format(nEventTime * 1000);
-        String strLogInfo = getString(R.string.RECEIVE_NOTIFY_DATA, strEvtUtcTime, temperature, humidity);
-        Log.v(LOG_TAG, strLogInfo);
+            String strEvtUtcTime;
+            strEvtUtcTime = mUtcTimeFmt.format(nEventTime * 1000);
+            String strLogInfo = getString(R.string.RECEIVE_NOTIFY_DATA, strEvtUtcTime, temperature, humidity);
+            Log.v(LOG_TAG, strLogInfo);
+        }
+        else if (nDataType == KBNotifyDataType.NTF_DATA_TYPE_BUTTON_EVT)
+        {
+            KBNotifyButtonEvtData notifyData = (KBNotifyButtonEvtData) sensorData;
+            String strLogInfo = String.format("Receive button press event:%d", notifyData.keyNtfEvent);
+            Log.v(LOG_TAG, strLogInfo);
+        }
+        else if (nDataType == KBNotifyDataType.NTF_DATA_TYPE_MOTION_EVT)
+        {
+            KBNotifyMotionEvtData notifyData = (KBNotifyMotionEvtData) sensorData;
+            String strLogInfo = String.format("Receive motion event:%d", notifyData.motionNtfEvent);
+            Log.v(LOG_TAG, strLogInfo);
+        }
     }
 
     //Please make sure the app does not enable any trigger's advertisement mode to KBTriggerAdvOnlyMode
@@ -246,7 +282,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
             thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
 
-            nEnableTHData2Adv.setEnabled(false);
+            mEnableTHData2Adv.setEnabled(false);
             this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
                 public void onActionComplete(boolean bConfigSuccess, KBException error) {
 
@@ -270,7 +306,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                         mBeacon.modifyConfig(newCfg, new KBeacon.ActionCallback() {
                             @Override
                             public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                                nEnableTHData2Adv.setEnabled(true);
+                                mEnableTHData2Adv.setEnabled(true);
                                 if (bConfigSuccess) {
                                     Log.v(LOG_TAG, "enable humidity advertisement success");
                                 }
@@ -289,6 +325,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             Log.v(LOG_TAG, "config humidity advertisement failed");
         }
     }
+
+
 
     //please make sure the app does not enable temperature&humidity trigger
     //If the app enable the trigger, the device only report the sensor data to app when trigger event happened.
@@ -313,10 +351,10 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
             thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
 
-            nEnableTHData2App.setEnabled(false);
+            mEnableTHData2App.setEnabled(false);
             this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
                 public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                    nEnableTHData2App.setEnabled(true);
+                    mEnableTHData2App.setEnabled(true);
                     if (bConfigSuccess) {
                         Log.v(LOG_TAG, "set temp&humidity trigger event report to app");
 
@@ -395,10 +433,10 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
 
         //enable humidity trigger
-        nEnableTHTrigger2Adv.setEnabled(false);
+        mEnableTHTrigger2Adv.setEnabled(false);
         this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                nEnableTHTrigger2Adv.setEnabled(true);
+                mEnableTHTrigger2Adv.setEnabled(true);
                 if (bConfigSuccess) {
                     toastShow("enable temp&humidity trigger success");
                 } else {
@@ -432,16 +470,17 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
 
             //set trigger event that report to app
-            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
+            //you can also set the trigger event both and advertisement.  (KBCfgTrigger.KBTriggerActionRptApp | KBCfgTrigger.KBTriggerActionAdv)
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp | KBCfgTrigger.KBTriggerActionAdv);
 
             //set trigger condition
             thTriggerPara.setTriggerHtParaMask(KBCfgHumidityTrigger.KBTriggerHTParaMaskHumidityAbove);
             thTriggerPara.setTriggerHumidityAbove(70);
 
-            nEnableTHTrigger2App.setEnabled(false);
+            mEnableTHTrigger2App.setEnabled(false);
             this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
                 public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                    nEnableTHTrigger2App.setEnabled(true);
+                    mEnableTHTrigger2App.setEnabled(true);
                     if (bConfigSuccess) {
                         toastShow("enable temp&humidity trigger success");
 
@@ -471,9 +510,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     }
 
 
-
     //The device will start broadcasting when motion trigger event happened
-    public void enableMotionTrigger() {
+    public void enableMotionTriggerToAdv() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
             return;
@@ -514,21 +552,119 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             return;
         }
 
-        //enable push button trigger
-        nEnableAccTrigger.setEnabled(false);
+        //enable motion trigger
+        mEnableAxisAdv.setEnabled(false);
         this.mBeacon.modifyTrigger(mtionTriggerPara, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                nEnableAccTrigger.setEnabled(true);
+                mEnableAxisAdv.setEnabled(true);
                 if (bConfigSuccess) {
-                    toastShow("enable push button trigger success");
+                    toastShow("enable motion trigger success");
                 } else {
-                    toastShow("enable push button trgger error:" + error.errorCode);
+                    toastShow("enable motion trigger error:" + error.errorCode);
                 }
             }
         });
     }
 
+    //Enable motion trigger event to connected app
+    //Require the KBeacon firmware version >= 6.20
+    public void enableMotionTriggerToApp() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
 
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeMotion) == 0) {
+            toastShow("Device does not supported motion sensor");
+            return;
+        }
+
+        KBCfgTrigger mtionTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            mtionTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeMotion);
+
+            //set trigger event that report to connected app
+            mtionTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
+
+            //set motion detection sensitive
+            mtionTriggerPara.setTriggerPara(10);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mEnableMotionTrigger.setEnabled(false);
+        this.mBeacon.modifyTrigger(mtionTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mEnableMotionTrigger.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+
+                    //subscribe humidity notify
+                    if (!mBeacon.isSensorDataSubscribe(KBNotifyButtonEvtData.class)) {
+                        mBeacon.subscribeSensorDataNotify(KBNotifyMotionEvtData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                            @Override
+                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                if (bConfigSuccess) {
+                                    Log.v(LOG_TAG, "subscribe motion notify success");
+                                } else {
+                                    Log.v(LOG_TAG, "subscribe motion notify failed");
+                                }
+                            }
+                        });
+                    }
+
+                } else {
+                    toastShow("enable push button trigger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    private void disableMotionTrigger(){
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeMotion) == 0) {
+            toastShow("Device does not supported motion sensor");
+            return;
+        }
+
+        KBCfgTrigger motionTriggerPara = new KBCfgTrigger();
+        try {
+            //set trigger type
+            motionTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeMotion);
+
+            //set trigger advertisement enable
+            motionTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+        } catch (KBException excpt) {
+            Log.e(LOG_TAG, "Input paramaters invalid");
+            return;
+        }
+
+        //disable push button trigger
+        this.mBeacon.modifyTrigger(motionTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                if (bConfigSuccess) {
+                    toastShow("disable motion trigger success");
+                } else {
+                    toastShow("disable motion trigger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //The device will start broadcasting when button trigger event happened
+    //for example, double click button
     public void enableButtonTrigger() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
@@ -572,12 +708,146 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
 
         //enable push button trigger
-        mTriggerButton.setEnabled(false);
+        mEnableBtnTrigger.setEnabled(false);
         this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
             public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                mTriggerButton.setEnabled(true);
+                mEnableBtnTrigger.setEnabled(true);
                 if (bConfigSuccess) {
                     toastShow("enable push button trigger success");
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //enable button press trigger event to app when KBeacon was connected
+    //Requre the KBeacon firmware version >= 6.20
+    public void enableBtnTriggerEvtToApp() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            Log.e(LOG_TAG, "device does not support button trigger");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger event that report to connected app
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
+
+            //set trigger button para, enable single click and double click
+            btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
+
+            //set the trigger adv interval to 500ms
+            btnTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mDisableBtnTrigger.setEnabled(false);
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDisableBtnTrigger.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+
+                    //subscribe button notify
+                    if (!mBeacon.isSensorDataSubscribe(KBNotifyButtonEvtData.class)) {
+                        mBeacon.subscribeSensorDataNotify(KBNotifyButtonEvtData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                            @Override
+                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                if (bConfigSuccess) {
+                                    Log.v(LOG_TAG, "subscribe button notify success");
+                                } else {
+                                    Log.v(LOG_TAG, "subscribe button notify failed");
+                                }
+                            }
+                        });
+                    }
+
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+
+    //enable button press trigger event to app when KBeacon was connected
+    //if app does not connect to device, then enable button trigger event to advertisement
+    //for firmware version >= 6.20
+    public void enableBtnTriggerEvtToApp2Adv() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            Log.e(LOG_TAG, "device does not support button trigger");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger advertisement and app notify
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp | KBCfgTrigger.KBTriggerActionAdv);
+
+            //set always advertisement
+            btnTriggerPara.setTriggerAdvMode(KBCfgTrigger.KBTriggerAdv2AliveMode);
+
+            //set trigger adv type
+            btnTriggerPara.setTriggerAdvType(KBAdvType.KBAdvTypeIBeacon);
+
+            //set trigger button para, enable single click and double click
+            btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnHold);
+
+            //set the trigger adv interval to 500ms
+            btnTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mDisableBtnTrigger.setEnabled(false);
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDisableBtnTrigger.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+
+                    //subscribe humidity notify
+                    if (!mBeacon.isSensorDataSubscribe(KBNotifyButtonEvtData.class)) {
+                        mBeacon.subscribeSensorDataNotify(KBNotifyButtonEvtData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                            @Override
+                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                if (bConfigSuccess) {
+                                    Log.v(LOG_TAG, "subscribe button notify success");
+                                } else {
+                                    Log.v(LOG_TAG, "subscribe button notify failed");
+                                }
+                            }
+                        });
+                    }
+
                 } else {
                     toastShow("enable push button trgger error:" + error.errorCode);
                 }
@@ -733,6 +1003,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         });
     }
 
+    //The accelerometer can only be in one operating mode at the same time,
+    // detected X/Y/Z axis or detect motion, so please disable motion trigger before enable X/Y/Z axis detection
     public void  enableAdvTypeIncludeAccXYZ()
     {
         KBCfgCommon oldCommonCfg = (KBCfgCommon)mBeacon.getConfigruationByType(KBCfgType.KBConfigTypeCommon);
@@ -767,15 +1039,15 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 newCfg.add(sensorCfg);
             }
 
-            nEnableAccSensor.setEnabled(false);
+            mEnableAxisAdv.setEnabled(false);
             mBeacon.modifyConfig(newCfg, new KBeacon.ActionCallback() {
                 @Override
                 public void onActionComplete(boolean bConfigSuccess, KBException error) {
-                    nEnableAccSensor.setEnabled(true);
+                    mEnableAxisAdv.setEnabled(true);
                     if (bConfigSuccess){
-                        Log.v(LOG_TAG, "enable acc advertisement success");
+                        Log.v(LOG_TAG, "enable axis advertisement success");
                     }else{
-                        Log.v(LOG_TAG, "enable acc advertisement failed");
+                        Log.v(LOG_TAG, "enable axis advertisement failed");
                     }
                 }
             });

@@ -36,7 +36,7 @@ minSdkVersion 21
 ```Java
 dependencies {
    …
-   implementation 'com.kbeacon:kbeaconlib:1.0.5'
+   implementation 'com.kbeacon:kbeaconlib:1.0.6'
 }
 ```
 
@@ -787,21 +787,24 @@ void updateViewToDevice()
 ```
 
 #### 4.3.4 Update trigger parameters
- For some KBeacon device that has some motion sensor, push button, etc., the app can set advertisement trigger and the device will advertise when the trigger condition is met. The trigger advertisement has follow parameters:
+ For some KBeacon device that has some motion sensor, push button, etc., the device can start advertise that include trigger event or send trigger event to connected Android/IOS app when the trigger condition was met.
+
+ The trigger advertisement has follow parameters:
  * Trigger advertisement Mode: There are two modes of trigger advertisement. One mode is to broadcast only when the trigger is satisfied. The other mode is always broadcasting, and the content of advertisement packet will change when the trigger conditions are met.
  * Trigger parameters: For motion trigger, the parameter is acceleration sensitivity. For button trigger, you can set different trigger event (single click, double click, etc.,).
  *	Trigger advertisement type: The advertisement packet type when trigger event happened. It can be setting to iBeacon, Eddystone or KSensor advertisement.
  *	Trigger advertisement duration: The advertisement duration when trigger event happened.
  *	Trigger advertisement interval: The Bluetooth advertisement interval for trigger advertisement.  You can set a different value from always broadcast.  
 
- Example 1:  
+
+ Example 1: Trigger advertisment
   &nbsp;&nbsp;Trigger adv mode: setting to broadcast only on trigger event happened  
   &nbsp;&nbsp;Trigger adv type: iBeacon  
   &nbsp;&nbsp;Trigger adv duration: 30 seconds  
 	&nbsp;&nbsp;Trigger adv interval: 300ms  
 	![avatar](https://github.com/kkmhogen/KBeaconDemo_Android/blob/master/only_adv_when_trigger.png?raw=true)
 
- Example 2:  
+ Example 2:  Trigger advertisment
 	&nbsp;For some scenario, we need to continuously monitor the KBeacon to ensure that the device was alive, so we set the trigger advertisement mode to always advertisement.   
 	&nbsp;We set an larger advertisement interval during alive advertisement and a short advertisement interval when trigger event happened, so we can achieve a balance between power consumption and triggers advertisement be easily detected.  
    &nbsp;&nbsp;Trigger adv mode: setting to Always advertisement  
@@ -816,7 +819,7 @@ void updateViewToDevice()
   The SDK will not automatically read trigger configuration after connection setup complete. So the app need read the trigger configuration manual if the app needed. Please reference 4.3.4.1 code for read trigger parameters from device.  
 
 #### 4.3.4.1 Push button trigger
-The push button trigger feature is used in some hospitals, nursing homes and other scenarios. When the user encounters some emergency event, they can click the button and the KBeacon device will start broadcast.
+The push button trigger feature is used in some hospitals, nursing homes and other scenarios. When the user encounters some emergency event(SOS button), they can click the button and the KBeacon device will start broadcast or the KBeacon device send the click event to connected Android/IOS app.
 The app can configure single click, double-click, triple-click, long-press the button trigger, oor a combination.
 
 **Notify:**  
@@ -826,9 +829,10 @@ The app can configure single click, double-click, triple-click, long-press the b
 * iBeacon UUID for single triple trigger = Always iBeacon UUID + 0x7
 * iBeacon UUID for single long press trigger = Always iBeacon UUID + 0x8
 
-1. Enable or button trigger feature.  
+1. Enable or button trigger event to advertisement.  
 
 ```Java
+//enable button trigger event to advertisements
 //the code was in DevicePannelActivity.java file that in ibeacon demo project
 public void enableButtonTrigger() {
       if (!mBeacon.isConnected()) {
@@ -885,7 +889,93 @@ public void enableButtonTrigger() {
   }
 ```
 
-2. The app can disable the button trigger
+2. Enable or button trigger event to connected Andoird/IOS application.
+```Java
+    //implementation NotifyDataDelegate
+    public class DevicePannelActivity extends AppBaseActivity implements View.OnClickListener, KBeacon.ConnStateDelegate, KBeacon.NotifyDataDelegate{
+      ...
+    }
+
+    //enable button trigger event to app that connected with the KBeacon
+    //the code was in DevicePannelActivity.java file that in sensordemo demo project
+    public void enableBtnTriggerEvtToApp() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            Log.e(LOG_TAG, "device does not support button trigger");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger event that report to connected app
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
+
+            //set trigger button para, enable single click and double click
+            btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
+
+            //set the trigger adv interval to 500ms
+            btnTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mDisableBtnTrigger.setEnabled(false);
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDisableBtnTrigger.setEnabled(true);
+                if (bConfigSuccess) {
+                    //subscribe button notify
+                    if (!mBeacon.isSensorDataSubscribe(KBNotifyButtonEvtData.class)) {
+                        mBeacon.subscribeSensorDataNotify(KBNotifyButtonEvtData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                            @Override
+                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                if (bConfigSuccess) {
+                                    Log.v(LOG_TAG, "subscribe button notify success");
+                                } else {
+                                    Log.v(LOG_TAG, "subscribe button notify failed");
+                                }
+                            }
+                        });
+                    }
+
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //handle trigger event
+    public void onNotifyDataReceived(KBeacon beacon, int nDataType, KBNotifyDataBase sensorData)
+    {
+        if (nDataType == KBNotifyButtonEvtData.NTF_DATA_TYPE_BUTTON)
+        {
+            KBNotifyButtonEvtData notifyData = (KBNotifyButtonEvtData) sensorData;
+            String strLogInfo = String.format("Receive button press event:%d", notifyData.keyNtfEvent);
+            Log.v(LOG_TAG, strLogInfo);
+        }
+        else if (nDataType == KBNotifyMotionEvtData.NTF_DATA_TYPE_MOTION_EVT)
+        {
+            KBNotifyMotionEvtData notifyData = (KBNotifyMotionEvtData) sensorData;
+            String strLogInfo = String.format("Receive motion event:%d", notifyData.motionNtfEvent);
+            Log.v(LOG_TAG, strLogInfo);
+        }
+    }
+```
+
+3. The app can disable the button trigger
 
 ```Java
 //disable button trigger
@@ -927,7 +1017,7 @@ public void disableButtonTrigger() {
  }
 ```
 
-3. The app can read the button current trigger parameters from KBeacon by follow code  
+4. The app can read the button current trigger parameters from KBeacon by follow code  
 
 ```Java
  //read button trigger information
@@ -1036,7 +1126,7 @@ Enabling motion trigger is similar to push button trigger, which will not be des
 ```
 
 #### 4.3.4.3 Temperature&Humidity trigger
-The app can configure KBeacon to start broadcasting after detecting an abnormality. For example, the temperature exceeds a specified threshold, or the temperature is below a certain threshold. Currently KBeacon supports the following 4 conditions, the conndition are OR relerationship.
+The app can configure KBeacon to start broadcasting after detecting an abnormality humidity&temperature. For example, the temperature exceeds a specified threshold, or the temperature is below a certain threshold. Currently KBeacon supports the following 4 conditions, the conndition are OR relerationship.
 * KBTriggerHTParaMaskTemperatureAbove
 * KBTriggerHTParaMaskTemperatureBelow
 * KBTriggerHTParaMaskHumidityAbove
@@ -1106,7 +1196,7 @@ public void enableTHTrigger() {
 ```
 
 #### 4.3.5 Temperature&Humidity sensor logger
-The temperature and humidity sensor will be turn on under the following conditions. 
+The temperature and humidity sensor will be turn on under the following conditions.
 * The app enable KSensor advertisement and set the kbeacon report humidity data in advertisement.
 * The app enable temperature and humidity trigger.
 After turning on humidity sensor, the kbeacon will start log when it detects the temperature and humidity changed. The app can config the change threshold.
@@ -1244,7 +1334,7 @@ mSensorDataMsg.readSensorDataInfo(mBeacon,
         }
     );
 ```
-	
+
 2.  Read log history records  
   The SDK provides the following three ways to read records.
   * READ_RECORD_NEW_RECORD:  read history records and move next. After app reading records, the KBeacon device will move the pointer to the next unreaded record. If the app send read request again, the KBeacon device sends next unread records and move the pointer to next.
@@ -1528,6 +1618,7 @@ https://github.com/NordicSemiconductor/Android-DFU-Library
 > 3. If you app need running in background, we suggest that sending and receiving data should be executed in the "Service". There will be a certain delay when the device returns data, and you can broadcast data to the "Activity" after receiving in the "Service".
 
 ## 7. Change log
+*  2021.1.30 V1.31 Support button and motion trigger event in connected state
 * 2020.11.11 v1.30 Support temperature and humidity sensor. Remove AAR library, please download library from JCenter.
 * 2020.3.1 v1.23 change the adv period type from integer to float.
 * 2020.1.16 v1.22 add button trigger.
