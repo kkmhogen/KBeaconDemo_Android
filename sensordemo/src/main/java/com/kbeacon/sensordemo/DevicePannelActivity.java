@@ -567,7 +567,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     }
 
     //Enable motion trigger event to connected app
-    //Require the KBeacon firmware version >= 6.20
+    //Require the KBeacon firmware version >= 5.20
     public void enableMotionTriggerToApp() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
@@ -722,7 +722,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     }
 
     //enable button press trigger event to app when KBeacon was connected
-    //Requre the KBeacon firmware version >= 6.20
+    //Requre the KBeacon firmware version >= 5.20
     public void enableBtnTriggerEvtToApp() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
@@ -787,7 +787,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
     //enable button press trigger event to app when KBeacon was connected
     //if app does not connect to device, then enable button trigger event to advertisement
-    //for firmware version >= 6.20
+    //for firmware version >= 5.20
     public void enableBtnTriggerEvtToApp2Adv() {
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
