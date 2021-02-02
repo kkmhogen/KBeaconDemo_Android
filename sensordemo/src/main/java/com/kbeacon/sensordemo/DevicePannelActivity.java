@@ -469,7 +469,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
 
             //set trigger event that report to app
-            //you can also set the trigger event both and advertisement.  (KBCfgTrigger.KBTriggerActionRptApp | KBCfgTrigger.KBTriggerActionAdv)
+            //you can also set the trigger event to both app and advertisement.  (KBCfgTrigger.KBTriggerActionRptApp | KBCfgTrigger.KBTriggerActionAdv)
             thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp | KBCfgTrigger.KBTriggerActionAdv);
 
             //set trigger condition
@@ -743,6 +743,69 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
 
             //set trigger event that report to connected app
             btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
+
+            //set trigger button para, enable single click and double click
+            btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
+
+            //set the trigger adv interval to 500ms
+            btnTriggerPara.setTriggerAdvInterval(500f);
+        } catch (KBException excpt) {
+            excpt.printStackTrace();
+            return;
+        }
+
+        //enable push button trigger
+        mDisableBtnTrigger.setEnabled(false);
+        this.mBeacon.modifyTrigger(btnTriggerPara, new KBeacon.ActionCallback() {
+            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                mDisableBtnTrigger.setEnabled(true);
+                if (bConfigSuccess) {
+                    toastShow("enable push button trigger success");
+
+                    //subscribe button notify
+                    if (!mBeacon.isSensorDataSubscribe(KBNotifyButtonEvtData.class)) {
+                        mBeacon.subscribeSensorDataNotify(KBNotifyButtonEvtData.class, DevicePannelActivity.this, new KBeacon.ActionCallback() {
+                            @Override
+                            public void onActionComplete(boolean bConfigSuccess, KBException error) {
+                                if (bConfigSuccess) {
+                                    Log.v(LOG_TAG, "subscribe button notify success");
+                                } else {
+                                    Log.v(LOG_TAG, "subscribe button notify failed");
+                                }
+                            }
+                        });
+                    }
+
+                } else {
+                    toastShow("enable push button trgger error:" + error.errorCode);
+                }
+            }
+        });
+    }
+
+    //Alarm when button was pressed
+    //Requre the KBeacon firmware version >= 5.20
+    public void enableBtnTriggerEvtToAlarm() {
+        if (!mBeacon.isConnected()) {
+            toastShow("Device is not connected");
+            return;
+        }
+
+        //check device capability
+        int nTriggerCapability = mBeacon.triggerCapability();
+        if ((nTriggerCapability & KBCfgTrigger.KBTriggerTypeButton) == 0) {
+            Log.e(LOG_TAG, "device does not support button trigger");
+            return;
+        }
+
+        KBCfgTrigger btnTriggerPara = new KBCfgTrigger();
+
+        try {
+            //set trigger type
+            btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
+
+            //set trigger event that report to connected app
+            btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAlert);
 
             //set trigger button para, enable single click and double click
             btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
