@@ -1484,7 +1484,7 @@ All command message between app and KBeacon are JSON format. Our SDK provide Has
  For some KBeacon device that has buzzer function. The app can ring device. For ring command, it has 5 parameters:
  * msg: msg type is 'ring'
  * ringTime: unit is ms. The KBeacon will start flash/alert for 'ringTime' millisecond  when receive this command.
- * ringType: 0x0:led flash only; 0x1:beep alert only; 0x2 both led flash and beep;
+ * ringType: 0x0:led flash only; 0x1:beep alert only; 0x2 both led flash and beep; 0xA turn off ring;
  * ledOn: optional parameters, unit is ms. The LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.
  * ledOff: optional parameters, unit is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.  
 
