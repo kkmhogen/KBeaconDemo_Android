@@ -330,6 +330,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
     //please make sure the app does not enable temperature&humidity trigger
     //If the app enable the trigger, the device only report the sensor data to app when trigger event happened.
     //After enable realtime data to app, then the device will periodically send the temperature and humidity data to app whether it was changed or not.
+    //require KBeacon firmware version >= 5.22
     public void enableTHRealtimeDataToApp(){
         if (!mBeacon.isConnected()) {
             toastShow("Device is not connected");
@@ -348,7 +349,10 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             //make sure the trigger was turn off
             KBCfgHumidityTrigger thTriggerPara = new KBCfgHumidityTrigger();
             thTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeHumidity);
-            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionOff);
+            thTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
+
+            //set trigger condition that report temperature and humidity by realtime
+            thTriggerPara.setTriggerHtParaMask(KBCfgHumidityTrigger.KBTriggerHTParaMaskRpt2App);
 
             mEnableTHData2App.setEnabled(false);
             this.mBeacon.modifyTrigger(thTriggerPara, new KBeacon.ActionCallback() {
