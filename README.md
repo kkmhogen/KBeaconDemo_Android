@@ -923,9 +923,6 @@ public void enableButtonTrigger() {
 
             //set trigger button para, enable single click and double click
             btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
-
-            //set the trigger adv interval to 500ms
-            btnTriggerPara.setTriggerAdvInterval(500f);
         } catch (KBException excpt) {
             excpt.printStackTrace();
             return;
@@ -998,14 +995,11 @@ public void enableButtonTrigger() {
         //set trigger type
         btnTriggerPara.setTriggerType(KBCfgTrigger.KBTriggerTypeButton);
 
-        //set trigger event that report to connected app
+        //set alarm action
         btnTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionAlert);
 
         //set trigger button para, enable single click and double click
         btnTriggerPara.setTriggerPara(KBCfgTrigger.KBTriggerBtnSingleClick | KBCfgTrigger.KBTriggerBtnDoubleClick);
-
-        //set the trigger adv interval to 500ms
-        btnTriggerPara.setTriggerAdvInterval(500f);
 
         //...
     }
@@ -1484,9 +1478,9 @@ All command message between app and KBeacon are JSON format. Our SDK provide Has
  For some KBeacon device that has buzzer function. The app can ring device. For ring command, it has 5 parameters:
  * msg: msg type is 'ring'
  * ringTime: unit is ms. The KBeacon will start flash/alert for 'ringTime' millisecond  when receive this command.
- * ringType: 0x0:led flash only; 0x1:beep alert only; 0x2 both led flash and beep; 0xA turn off ring;
- * ledOn: optional parameters, unit is ms. The LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.
- * ledOff: optional parameters, unit is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x2.  
+ * ringType: 0x1:beep alert only; 0x2 led flash ; 0x0 turn off ring;
+ * ledOn: optional parameters, unit is ms. The LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x1.
+ * ledOff: optional parameters, unit is ms. the LED will flash at interval (ledOn + ledOff).  This parameters is valid when ringType set to 0x0 or 0x1.  
 
   ```Java
  public void ringDevice() {
@@ -1498,7 +1492,7 @@ All command message between app and KBeacon are JSON format. Our SDK provide Has
         HashMap<String, Object> cmdPara = new HashMap<>(5);
         cmdPara.put("msg", "ring");
         cmdPara.put("ringTime", 20000);   //ring times, uint is ms
-        cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
+        cmdPara.put("ringType", 2);  //0x1:beep alert only; 0x2 led flash;
         cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
         cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
         mBeacon.sendCommand(cmdPara, new KBeacon.ActionCallback() {

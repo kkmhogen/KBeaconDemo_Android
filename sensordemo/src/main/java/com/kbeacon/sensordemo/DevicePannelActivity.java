@@ -594,7 +594,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
             mtionTriggerPara.setTriggerAction(KBCfgTrigger.KBTriggerActionRptApp);
 
             //set motion detection sensitive
-            mtionTriggerPara.setTriggerPara(10);
+            mtionTriggerPara.setTriggerPara(3);
         } catch (KBException excpt) {
             excpt.printStackTrace();
             return;
