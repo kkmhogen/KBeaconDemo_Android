@@ -9,7 +9,7 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.kbeacon.sensordemo.R;
-import com.kbeacon.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
+import com.kkmcn.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
 
 import java.text.SimpleDateFormat;
 

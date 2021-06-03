@@ -19,19 +19,19 @@ import android.widget.ListView;
 
 import com.kbeacon.sensordemo.AppBaseActivity;
 import com.kbeacon.sensordemo.R;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgIBeacon;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
-import com.kbeacon.kbeaconlib.KBException;
-import com.kbeacon.kbeaconlib.KBSensorHistoryData.KBHumidityDataMsg;
-import com.kbeacon.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
-import com.kbeacon.kbeaconlib.KBSensorHistoryData.KBSensorDataMsgBase;
-import com.kbeacon.kbeaconlib.KBeacon;
-import com.kbeacon.kbeaconlib.KBeaconsMgr;
-import com.kbeacon.kbeaconlib.UTCTime;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgIBeacon;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgType;
+import com.kkmcn.kbeaconlib.KBException;
+import com.kkmcn.kbeaconlib.KBSensorHistoryData.KBHumidityDataMsg;
+import com.kkmcn.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
+import com.kkmcn.kbeaconlib.KBSensorHistoryData.KBSensorDataMsgBase;
+import com.kkmcn.kbeaconlib.KBeacon;
+import com.kkmcn.kbeaconlib.KBeaconsMgr;
+import com.kkmcn.kbeaconlib.UTCTime;
 
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import static com.kbeacon.kbeaconlib.KBSensorHistoryData.KBSensorDataMsgBase.INVALID_DATA_RECORD_POS;
+import static com.kkmcn.kbeaconlib.KBSensorHistoryData.KBSensorDataMsgBase.INVALID_DATA_RECORD_POS;
 
 public class CfgHTBeaconHistoryActivity extends AppBaseActivity implements AbsListView.OnScrollListener {
 

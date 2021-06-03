@@ -1,5 +1,5 @@
 package com.kbeacon.sensordemo.recordhistory;
-import com.kbeacon.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
+import com.kkmcn.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
 
 public interface HTSensorDataInterface {
 

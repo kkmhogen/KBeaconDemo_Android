@@ -12,26 +12,26 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.kbeacon.kbeaconlib.KBConnPara;
-import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBHumidityNotifyData;
-import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyButtonEvtData;
-import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyDataBase;
-import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyDataType;
-import com.kbeacon.kbeaconlib.KBSensorNotifyData.KBNotifyMotionEvtData;
-import com.kbeacon.kbeaconlib.UTCTime;
+import com.kkmcn.kbeaconlib.KBConnPara;
+import com.kkmcn.kbeaconlib.KBSensorNotifyData.KBHumidityNotifyData;
+import com.kkmcn.kbeaconlib.KBSensorNotifyData.KBNotifyButtonEvtData;
+import com.kkmcn.kbeaconlib.KBSensorNotifyData.KBNotifyDataBase;
+import com.kkmcn.kbeaconlib.KBSensorNotifyData.KBNotifyDataType;
+import com.kkmcn.kbeaconlib.KBSensorNotifyData.KBNotifyMotionEvtData;
+import com.kkmcn.kbeaconlib.UTCTime;
 import com.kbeacon.sensordemo.dfulibrary.KBeaconDFUActivity;
 import com.kbeacon.sensordemo.recordhistory.CfgHTBeaconHistoryActivity;
-import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgHumidityTrigger;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgSensor;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgTrigger;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
-import com.kbeacon.kbeaconlib.KBConnectionEvent;
-import com.kbeacon.kbeaconlib.KBException;
-import com.kbeacon.kbeaconlib.KBeacon;
-import com.kbeacon.kbeaconlib.KBeaconsMgr;
+import com.kkmcn.kbeaconlib.KBAdvPackage.KBAdvType;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgBase;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgCommon;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgHumidityTrigger;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgSensor;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgTrigger;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgType;
+import com.kkmcn.kbeaconlib.KBConnectionEvent;
+import com.kkmcn.kbeaconlib.KBException;
+import com.kkmcn.kbeaconlib.KBeacon;
+import com.kkmcn.kbeaconlib.KBeaconsMgr;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1049,7 +1049,7 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         HashMap<String, Object> cmdPara = new HashMap<>(5);
         cmdPara.put("msg", "ring");
         cmdPara.put("ringTime", 20000);   //ring times, uint is ms
-        cmdPara.put("ringType", 2);  //0x0:led flash only; 0x1:beep alert only; 0x2 led flash and beep alert;
+        cmdPara.put("ringType", 2);  //0x1:beep; 0x2:beep alert only; 0x4: virbrate;
         cmdPara.put("ledOn", 200);   //valid when ringType set to 0x0 or 0x2
         cmdPara.put("ledOff", 1800); //valid when ringType set to 0x0 or 0x2
         mRingButton.setEnabled(false);
@@ -1196,6 +1196,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
         }
         else if (state == KBeacon.KBStateDisconnecting) {
             Log.e(LOG_TAG, "connection error, now disconnecting");
+            nDeviceConnState = state;
+            invalidateOptionsMenu();
         }
         else
         {

@@ -16,8 +16,8 @@ limitations under the License.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.kbeacon.sensordemo"
-          android:versionCode="29"
-          android:versionName="2.03">
+          android:versionCode="30"
+          android:versionName="2.04">
 
     <!--Declare this required feature if you want to make the app available to BLE-capable
     devices only.  If you want to make your app available to devices that don't support BLE,

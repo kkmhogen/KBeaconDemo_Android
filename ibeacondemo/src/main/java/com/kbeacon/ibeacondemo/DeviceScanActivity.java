@@ -28,8 +28,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import com.kbeacon.kbeaconlib.KBeacon;
-import com.kbeacon.kbeaconlib.KBeaconsMgr;
+import com.kkmcn.kbeaconlib.KBeacon;
+import com.kkmcn.kbeaconlib.KBeaconsMgr;
 import com.kbeacon.ibeacondemo.R;
 
 import java.util.HashMap;

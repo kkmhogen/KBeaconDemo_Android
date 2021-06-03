@@ -15,17 +15,17 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.kbeacon.kbeaconlib.KBAdvPackage.KBAdvType;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgCommon;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgEddyUID;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgEddyURL;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgType;
-import com.kbeacon.kbeaconlib.KBConnectionEvent;
-import com.kbeacon.kbeaconlib.KBException;
-import com.kbeacon.kbeaconlib.KBUtility;
-import com.kbeacon.kbeaconlib.KBeacon;
-import com.kbeacon.kbeaconlib.KBeaconsMgr;
+import com.kkmcn.kbeaconlib.KBAdvPackage.KBAdvType;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgBase;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgCommon;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgEddyUID;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgEddyURL;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgType;
+import com.kkmcn.kbeaconlib.KBConnectionEvent;
+import com.kkmcn.kbeaconlib.KBException;
+import com.kkmcn.kbeaconlib.KBUtility;
+import com.kkmcn.kbeaconlib.KBeacon;
+import com.kkmcn.kbeaconlib.KBeaconsMgr;
 
 import java.util.ArrayList;
 import java.util.HashMap;

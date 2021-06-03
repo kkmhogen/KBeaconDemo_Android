@@ -3,8 +3,8 @@ package com.kbeacon.sensordemo.dfulibrary;
 import android.app.Activity;
 
 import com.kbeacon.sensordemo.Utils;
-import com.kbeacon.kbeaconlib.KBCfgPackage.KBCfgBase;
-import com.kbeacon.kbeaconlib.KBException;
+import com.kkmcn.kbeaconlib.KBCfgPackage.KBCfgBase;
+import com.kkmcn.kbeaconlib.KBException;
 
 import java.io.File;
 import java.io.FileOutputStream;

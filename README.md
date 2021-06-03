@@ -31,16 +31,25 @@ Development environment:
 Android Studio  
 minSdkVersion 21
 
-1. The kbeaconlib library can be found on jcenter repository. Add it to your project by adding the following dependency in your build.gradle:
+1. The kbeaconlib library can be found on maven repository. Add it to your application project by adding the following dependency in your build.gradle:
 
 ```Java
 dependencies {
    …
-   implementation 'com.kbeacon:kbeaconlib:1.0.6'
+   implementation 'com.kkmcn.kbeaconlib:kbeaconlib:1.0.9'
 }
 ```
 
-2. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:
+2. In your root project’s build.gradle file, make sure to include maven repository.
+```Java
+buildscript {
+    repositories {
+        mavenCentral() 
+    }
+}
+```
+
+3. Add the Bluetooth permissions and the corresponding component registration under the AndroidManifest.xml file. As follows:
 
 ```Java
 <uses-feature

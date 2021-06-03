@@ -3,7 +3,7 @@ package com.kbeacon.sensordemo.recordhistory;
 import android.content.Context;
 import android.util.Log;
 
-import com.kbeacon.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
+import com.kkmcn.kbeaconlib.KBSensorHistoryData.KBHumidityRecord;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
