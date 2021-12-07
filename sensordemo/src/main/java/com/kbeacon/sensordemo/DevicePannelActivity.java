@@ -1,6 +1,8 @@
 package com.kbeacon.sensordemo;
 
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -190,7 +192,8 @@ public class DevicePannelActivity extends AppBaseActivity implements View.OnClic
                 break;
 
             case R.id.enableBtnTrigger:
-                enableButtonTrigger();
+                //enableButtonTrigger();
+                enableBtnTriggerEvtToApp();
                 break;
 
             case R.id.disableBtnTrigger:

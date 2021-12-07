@@ -25,7 +25,7 @@ public class KBFirmwareDownload {
     }
 
     private final static String DEFAULT_DOWN_DIRECTORY_NAME = "KBeaconFirmware";
-    private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://api.ieasygroup.com:8092/KBeaconFirmware/";
+    private final static String DEFAULT_DOWNLOAD_WEB_ADDRESS = "https://download.kkmiot.com:8093/KBeaconFirmware/";
 
     public final static int ERR_NETWORK_DOWN_FILE_ERROR = 0x1001;
     public final static int ERR_CREATE_DIRECTORY_FAIL = 0x1002;

@@ -1414,7 +1414,7 @@ mSensorDataMsg.readSensorDataInfo(mBeacon,
 ```  
 
   Example2: The app read the temperature and humidity records without moving pointer.
-  The device has 100 records sorted by time, the app want to reading 20 records and start from the No 99. The Kbeacon will send records #99 ~ #90 to app by reverse order.     
+  The device has 100 records sorted by time, the app want to reading 10 records and start from the No 99. The Kbeacon will send records #99 ~ #90 to app by reverse order.     
   If the app does not known the last record no, then the value can set to INVALID_DATA_RECORD_POS.
 ```Java
  mSensorDataMsg.readSensorRecord(mBeacon,
